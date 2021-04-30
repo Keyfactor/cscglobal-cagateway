@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CscGlobalCaProxy", "CscGlobalCaProxy.csproj", "{B823BE29-7950-49FB-9239-DDBB423B08CE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B823BE29-7950-49FB-9239-DDBB423B08CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B823BE29-7950-49FB-9239-DDBB423B08CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B823BE29-7950-49FB-9239-DDBB423B08CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B823BE29-7950-49FB-9239-DDBB423B08CE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B77A03E-D9D1-4FBC-97CB-ED9A8148D5B8}
+	EndGlobalSection
+EndGlobal
