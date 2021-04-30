@@ -7,11 +7,25 @@ using CAProxy.AnyGateway.Interfaces;
 using CAProxy.AnyGateway.Models;
 using CAProxy.Common;
 using CSS.PKI;
+using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
     public class CscGlobalCaProxy:BaseCAConnector
     {
+        private readonly RequestManager _requestManager;
+
+        private ICscGlobalClient SslStoreClient { get; set; }
+        private ICAConnectorConfigProvider ConfigManager { get; set; }
+        public string PartnerCode { get; set; }
+        public string AuthenticationToken { get; set; }
+        public int PageSize { get; set; }
+
+        public CscGlobalCaProxy()
+        {
+            _requestManager = new RequestManager(this);
+        }
+
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
             throw new NotImplementedException();
