@@ -1,0 +1,119 @@
+{
+  "Id": 999999,
+  "CommonName": "CscGlobal",
+  "TemplateName": "CscGlobal",
+  "Oid": "Replace OID",
+  "KeySize": "2048",
+  "KeyType": "RSA",
+  "ForestRoot": "keyfactor.lab",
+  "FriendlyName": "Replace Friendly Name",
+  "KeyRetention": "AfterExpiration",
+  "KeyRetentionDays": 55,
+  "KeyArchival": false,
+  "EnrollmentFields": [
+    {
+      "Id": 2222221,
+      "Name": "Server Software",
+      "Options": [
+				"OTHER",
+				"APACHE_MODSSL",
+				"APACHE_SSL",
+				"C2NET_STRONGHOLD",
+				"CISCO_3000_SERIES_VPN_CONCENTRATOR",
+				"CITRIX",
+				"COBALT_RAQ",
+				"COVALENT_SERVER_SOFTWARE",
+				"ENSIM",
+				"H_SPHERE",
+				"IBM_HTTP_SERVER",
+				"IBM_INTERNET_CONNECTION_SERVER",
+				"IPLANET",
+				"JAVA_WEBSERVER_JAVASOFT_SUN",
+				"LOTUS_DOMAINO_GO",
+				"MICROSOFT_IIS_1X_TO_4X",
+				"MICROSOFT_IIS_5X_TO_6X",
+				"MICROSOFT_IIS_7X_TO_LATER",
+				"NETSCAPE_ENTERPRISE_SERVER",
+				"NETSCAPE_FASTTRACK",
+				"NGINX",
+				"NOVELL_WEB_SERVER",
+				"ORACLE",
+				"PLESK",
+				"QUID_PRO_QUO",
+				"R3_SSL_SERVER",
+				"RAVEN_SSL",
+				"REDHAT_LINUX",
+				"SAP_WEB_APPLICATION_SERVER",
+				"TOMCAT",
+				"WEBSITE_PROFESSIONAL",
+				"WEBSTAR_4X_AND_LATER",
+				"WEBTEN_FROM_TENON",
+				"WHM_CPANEL",
+				"ZEUS_WEB_SERVER"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222222,
+      "Name": "Certificate Type",
+      "Options": [
+        "PREMIUM",
+        "WILDCARD",
+		"UCC",
+		"EV"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222223,
+      "Name": "Term",
+      "Options": [
+        "12",
+		"24",
+		"36",
+		"48",
+		"60",
+		"72"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222224,
+      "Name": "Organization Contact",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222225,
+      "Name": "Domain Control Validation Email",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222226,
+      "Name": "Notification Email(s) Comma Seperated",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222227,
+      "Name": "Show Price",
+      "Options": [
+        "True",
+		"False"
+      ],
+      "DataType": 2
+    }
+  ],
+  "AllowedEnrollmentTypes": 7,
+  "TemplateRegexes": [],
+  "UseAllowedRequesters": false,
+  "AllowedRequesters": [],
+  "DisplayName": "Replace Display Name"
+}

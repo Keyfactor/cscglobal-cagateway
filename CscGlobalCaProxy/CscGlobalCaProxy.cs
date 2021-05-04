@@ -2,11 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using CAProxy.AnyGateway;
 using CAProxy.AnyGateway.Interfaces;
 using CAProxy.AnyGateway.Models;
 using CAProxy.Common;
+using CSS.Common.Logging;
 using CSS.PKI;
+using Keyfactor.AnyGateway.CscGlobal.Client;
 using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 
 namespace Keyfactor.AnyGateway.CscGlobal
@@ -15,7 +18,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
     {
         private readonly RequestManager _requestManager;
 
-        private ICscGlobalClient SslStoreClient { get; set; }
+        private ICscGlobalClient CscGlobalClient { get; set; }
         private ICAConnectorConfigProvider ConfigManager { get; set; }
         public string PartnerCode { get; set; }
         public string AuthenticationToken { get; set; }
@@ -28,7 +31,22 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
-            throw new NotImplementedException();
+
+            try
+            {
+                var requestResponse =
+                    Task.Run(async () => await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId)).Result;
+
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+
+                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"An Error has occurred during the revoke process {e.Message}");
+                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
+            }
+
         }
 
         [Obsolete]

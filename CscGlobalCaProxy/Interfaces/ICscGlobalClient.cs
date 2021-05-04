@@ -18,5 +18,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
 
         Task<ICertificateResponse> SubmitGetCertificateAsync(string certificateId);
         Task SubmitQueryTemplatesRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct);
+
+        Task<IRevokeResponse> SubmitRevokeCertificateAsync(string uuId);
     }
 }

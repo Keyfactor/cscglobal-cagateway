@@ -8,11 +8,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
 {
     public class RequestManager
     {
-        private readonly CscGlobalCaProxy _sslStoreCaProxy;
+        private readonly CscGlobalCaProxy _cscGlobalCaProxy;
 
-        public RequestManager(CscGlobalCaProxy sslStoreCaProxy)
+        public RequestManager(CscGlobalCaProxy cscGlobalCaProxy)
         {
-            _sslStoreCaProxy = sslStoreCaProxy;
+            _cscGlobalCaProxy = cscGlobalCaProxy;
         }
 
         public RegistrationRequest GetAdminContact(EnrollmentProductInfo productInfo)

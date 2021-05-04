@@ -15,7 +15,7 @@ using Newtonsoft.Json;
 
 namespace Keyfactor.AnyGateway.CscGlobal.Client
 {
-    public class CscGlobalClient:LoggingClientBase, ICscGlobalClient
+    public sealed class CscGlobalClient:LoggingClientBase, ICscGlobalClient
     {
         private Uri BaseUrl { get; }
         private HttpClient RestClient { get; }
@@ -88,6 +88,17 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 var getCertificateResponse =
                     JsonConvert.DeserializeObject<CertificateResponse>(await resp.Content.ReadAsStringAsync());
                 return getCertificateResponse;
+            }
+        }
+
+        public async Task<IRevokeResponse> SubmitRevokeCertificateAsync(string uuId)
+        {
+            using (var resp = await RestClient.PutAsync($"/tls/revoke/{uuId}",new StringContent("")))
+            {
+                resp.EnsureSuccessStatusCode();
+                var getRevokeResponse =
+                    JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
+                return getRevokeResponse;
             }
         }
 
