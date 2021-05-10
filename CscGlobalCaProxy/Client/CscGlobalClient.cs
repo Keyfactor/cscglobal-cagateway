@@ -38,7 +38,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             return returnClient;
         }
 
-        public async Task<IRegistrationResponse> SubmitRegistrationAsync(
+        public async Task<RegistrationResponse> SubmitRegistrationAsync(
             RegistrationRequest registerRequest)
         {
             using (var resp = await RestClient.PostAsync("/tls/registration", new StringContent(
@@ -52,7 +52,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task<IRenewalResponse> SubmitRenewalAsync(
+        public async Task<RenewalResponse> SubmitRenewalAsync(
             RenewalRequest renewalRequest)
         {
             using (var resp = await RestClient.PostAsync("/tls/renewal", new StringContent(
@@ -66,7 +66,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task<IReissueResponse> SubmitReissueAsync(
+        public async Task<ReissueResponse> SubmitReissueAsync(
             ReissueRequest reissueRequest)
         {
             using (var resp = await RestClient.PostAsync("/tls/reissue", new StringContent(
@@ -80,7 +80,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task<ICertificateResponse> SubmitGetCertificateAsync(string certificateId)
+        public async Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId)
         {
             using (var resp = await RestClient.GetAsync($"/tls/certificate/{certificateId}"))
             {
@@ -91,7 +91,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task<IRevokeResponse> SubmitRevokeCertificateAsync(string uuId)
+        public async Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId)
         {
             using (var resp = await RestClient.PutAsync($"/tls/revoke/{uuId}",new StringContent("")))
             {

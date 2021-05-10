@@ -51,6 +51,26 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
+        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo,string csr)
+        {
+            return new RegistrationRequest()
+            {
+                Csr = csr,
+                ServerSoftware = productInfo.ProductParameters["Server Software"],
+                CertificateType = productInfo.ProductParameters["Certificate Type"],
+                Term = productInfo.ProductParameters["Term"],
+                ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
+                ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
+                ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
+                DomainControlValidation = GetDomainControlValidation(productInfo),
+                Notifications = GetNotifications(productInfo),
+                OrganizationContact = productInfo.ProductParameters["Organization Contact"],
+                BusinessUnit = productInfo.ProductParameters["Business Unit"],
+                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"])
+            };
+        }
+
         public Notifications GetNotifications(EnrollmentProductInfo productInfo)
         {
             return new Notifications

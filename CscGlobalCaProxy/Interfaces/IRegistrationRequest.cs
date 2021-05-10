@@ -15,5 +15,9 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
         Notifications Notifications { get; set; }
         bool ShowPrice { get; set; }
         List<CustomField> CustomFields { get; set; }
+        string ApplicantFirstName { get; set; }
+        string ApplicantLastName { get; set; }
+        string ApplicantEmailAddress { get; set; }
+        string ApplicantPhoneNumber { get; set; }
     }
 }

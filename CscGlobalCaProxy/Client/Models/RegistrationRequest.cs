@@ -16,5 +16,10 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client.Models
         [JsonProperty("notifications")] public Notifications Notifications { get; set; }
         [JsonProperty("showPrice")] public bool ShowPrice { get; set; }
         [JsonProperty("customFields")] public List<CustomField> CustomFields { get; set; }
+        [JsonProperty("applicantFirstName")] public string ApplicantFirstName { get; set; }
+        [JsonProperty("applicantLastName")] public string ApplicantLastName { get; set; }
+        [JsonProperty("applicantEmailAddress")] public string ApplicantEmailAddress { get; set; }
+        [JsonProperty("applicantPhoneNumber")] public string ApplicantPhoneNumber { get; set; }
+
     }
 }

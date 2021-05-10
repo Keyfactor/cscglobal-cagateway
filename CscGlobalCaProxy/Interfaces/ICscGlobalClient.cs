@@ -7,18 +7,18 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
 {
     public interface ICscGlobalClient
     {
-        Task<IRegistrationResponse> SubmitRegistrationAsync(
+        Task<RegistrationResponse> SubmitRegistrationAsync(
             RegistrationRequest registerRequest);
 
-        Task<IRenewalResponse> SubmitRenewalAsync(
+        Task<RenewalResponse> SubmitRenewalAsync(
             RenewalRequest renewalRequest);
 
-        Task<IReissueResponse> SubmitReissueAsync(
+        Task<ReissueResponse> SubmitReissueAsync(
             ReissueRequest reissueRequest);
 
-        Task<ICertificateResponse> SubmitGetCertificateAsync(string certificateId);
+        Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId);
         Task SubmitQueryTemplatesRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct);
 
-        Task<IRevokeResponse> SubmitRevokeCertificateAsync(string uuId);
+        Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId);
     }
 }
