@@ -83,6 +83,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\CscGlobalClient.cs" />
+    <Compile Include="Interfaces\IRegistrationError.cs" />
+    <Compile Include="Client\Models\RegistrationError.cs" />
     <Compile Include="Interfaces\ICscGlobalClient.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="CscGlobalCaProxy.cs" />

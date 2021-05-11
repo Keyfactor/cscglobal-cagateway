@@ -5,6 +5,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client.Models
 {
     public class RegistrationResponse : IRegistrationResponse
     {
-        [JsonProperty("result")] public Result Result { get; set; }
+        [JsonProperty("result",Required = Required.AllowNull)] public Result Result { get; set; }
+        [JsonProperty(Required = Required.AllowNull)] public RegistrationError Error { get; set; }
     }
 }

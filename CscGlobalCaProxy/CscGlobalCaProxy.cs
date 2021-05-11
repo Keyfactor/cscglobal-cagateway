@@ -80,8 +80,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             IRegistrationResponse enrollmentResponse = null;
             RegistrationRequest enrollmentRequest;
-            ReissueRequest reIssueRequest;
-            CAConnectorCertificate priorCert;
+            //ReissueRequest reIssueRequest;
+            //CAConnectorCertificate priorCert;
 
             switch (enrollmentType)
             {
