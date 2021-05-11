@@ -20,12 +20,17 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         private Uri BaseUrl { get; }
         private HttpClient RestClient { get; }
         private int PageSize { get; } = 100;
+        private string ApiKey { get; set; }
+        private string Authorization { get; set; }
+
 
         public CscGlobalClient(ICAConnectorConfigProvider config)
         {
             if (config.CAConnectionData.ContainsKey(Constants.CscGlobalApiKey))
             {
                 BaseUrl = new Uri(config.CAConnectionData[Constants.CscGlobalUrl].ToString());
+                ApiKey = config.CAConnectionData[Constants.CscGlobalApiKey].ToString();
+                Authorization = config.CAConnectionData[Constants.BearerToken].ToString();
                 RestClient = ConfigureRestClient();
             }
         }
@@ -35,13 +40,15 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             var clientHandler = new WebRequestHandler();
             var returnClient = new HttpClient(clientHandler, true) { BaseAddress = BaseUrl };
             returnClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            returnClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Authorization);
+            returnClient.DefaultRequestHeaders.Add("apikey", ApiKey);
             return returnClient;
         }
 
         public async Task<RegistrationResponse> SubmitRegistrationAsync(
             RegistrationRequest registerRequest)
         {
-            using (var resp = await RestClient.PostAsync("/tls/registration", new StringContent(
+            using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
                 JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(registerRequest));

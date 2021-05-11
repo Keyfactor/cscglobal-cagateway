@@ -12,6 +12,7 @@ using CSS.Common.Logging;
 using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
 using Keyfactor.AnyGateway.CscGlobal.Interfaces;
+using Keyfactor.AnyGateway.CscGlobal.Client;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
@@ -139,7 +140,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
         {
-            
+            CscGlobalClient = new CscGlobalClient(configProvider);
         }
 
         public override void Ping()

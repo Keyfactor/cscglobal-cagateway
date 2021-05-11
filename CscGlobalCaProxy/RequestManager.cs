@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using CAProxy.AnyGateway.Models;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
 
@@ -46,18 +47,22 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             return new DomainControlValidation
             {
-                MethodType = productInfo.ProductParameters["Method Type"],
-                EmailAddress = productInfo.ProductParameters["Email Address"]
+                MethodType = productInfo.ProductParameters["Domain Control Validation Method"],
+                EmailAddress = productInfo.ProductParameters["DCV Email (admin@yourdomain.com)"]
             };
         }
 
         public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo,string csr)
         {
+            var bytes = Encoding.UTF8.GetBytes(csr);
+            var encodedString = Convert.ToBase64String(bytes);
+            Char[] delimiters = { ' '};
+
             return new RegistrationRequest()
             {
-                Csr = csr,
-                ServerSoftware = productInfo.ProductParameters["Server Software"],
-                CertificateType = productInfo.ProductParameters["Certificate Type"],
+                Csr = encodedString,
+                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
+                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
                 Term = productInfo.ProductParameters["Term"],
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
@@ -75,8 +80,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             return new Notifications
             {
-                Enabled = Convert.ToBoolean(productInfo.ProductParameters["Enabled"]),
-                AdditionalNotificationEmails = productInfo.ProductParameters["Comma Separated Emails"].Split(',').ToList()
+                Enabled = true,
+                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"].Split(',').ToList()
             };
         }
 
