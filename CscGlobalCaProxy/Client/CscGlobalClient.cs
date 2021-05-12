@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -48,15 +50,34 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         public async Task<RegistrationResponse> SubmitRegistrationAsync(
             RegistrationRequest registerRequest)
         {
-            using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
-                JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
-            {
-                Logger.Trace(JsonConvert.SerializeObject(registerRequest));
-                resp.EnsureSuccessStatusCode();
-                var registrationResponse =
-                    JsonConvert.DeserializeObject<RegistrationResponse>(await resp.Content.ReadAsStringAsync());
-                return registrationResponse;
-            }
+
+                using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
+                    JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
+                {
+                    Logger.Trace(JsonConvert.SerializeObject(registerRequest));
+                    var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
+                    if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Resposne
+                    {
+                        var errorResponse =
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
+                        RegistrationResponse response = new RegistrationResponse();
+                        response.RegistrationError = errorResponse;
+                        response.Result = null;
+                        return response;
+                    }
+                    else
+                    {
+                        var registrationResponse =
+                            JsonConvert.DeserializeObject<RegistrationResponse>(await resp.Content.ReadAsStringAsync(), settings);
+                        return registrationResponse;
+                    }
+
+
+                }
+
+
+            return null;
+
         }
 
         public async Task<RenewalResponse> SubmitRenewalAsync(

@@ -80,8 +80,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             IRegistrationResponse enrollmentResponse = null;
             RegistrationRequest enrollmentRequest;
-            //ReissueRequest reIssueRequest;
-            //CAConnectorCertificate priorCert;
 
             switch (enrollmentType)
             {
@@ -115,15 +113,15 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         private EnrollmentResult GetEnrollmentResult(IRegistrationResponse registrationResponse)
         {
-            /*if (registrationResponse != null && newOrderResponse.AuthResponse.IsError)
+            if (registrationResponse.RegistrationError != null)
             {
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 return new EnrollmentResult
                 {
                     Status = 30, //failure
-                    StatusMessage = registrationResponse.AuthResponse.Message[0]
+                    StatusMessage = registrationResponse.RegistrationError.Description
                 };
-            }*/
+            }
 
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return new EnrollmentResult
