@@ -17,7 +17,8 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
             ReissueRequest reissueRequest);
 
         Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId);
-        Task SubmitQueryTemplatesRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct);
+
+        Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct);
 
         Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId);
     }

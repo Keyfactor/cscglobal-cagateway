@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CAProxy.AnyGateway.Models;
+using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
 
 namespace Keyfactor.AnyGateway.CscGlobal
@@ -124,6 +125,30 @@ namespace Keyfactor.AnyGateway.CscGlobal
         private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo)
         {
             throw new NotImplementedException();
+        }
+
+        public int MapReturnStatus(string cscGlobalStatus)
+        {
+            PKIConstants.Microsoft.RequestDisposition returnStatus;
+
+            switch (cscGlobalStatus)
+            {
+                case "ACTIVE":
+                    returnStatus = PKIConstants.Microsoft.RequestDisposition.ISSUED;
+                    break;
+                case "Initial":
+                case "Pending":
+                    returnStatus = PKIConstants.Microsoft.RequestDisposition.PENDING;
+                    break;
+                case "REVOKED":
+                    returnStatus = PKIConstants.Microsoft.RequestDisposition.REVOKED;
+                    break;
+                default:
+                    returnStatus = PKIConstants.Microsoft.RequestDisposition.UNKNOWN;
+                    break;
+            }
+
+            return Convert.ToInt32(returnStatus);
         }
     }
 }

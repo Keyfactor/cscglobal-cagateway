@@ -31,8 +31,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BouncyCastle.Crypto, Version=1.8.9.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
-      <HintPath>packages\BouncyCastle.1.8.9\lib\BouncyCastle.Crypto.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.5.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>packages\BouncyCastle.1.8.5\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
     <Reference Include="CAProxy.AnyGateway.Core, Version=20.9.0.0, Culture=neutral, PublicKeyToken=0ed89d330114ab09, processorArchitecture=MSIL">
       <HintPath>packages\Keyfactor.AnyGateway.SDK.20.9.0\lib\net462\CAProxy.AnyGateway.Core.dll</HintPath>

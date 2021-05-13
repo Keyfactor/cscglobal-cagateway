@@ -130,7 +130,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task SubmitQueryTemplatesRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct)
+        public async Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct)
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
@@ -143,7 +143,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 {
                     pageCounter++;
                     var batchItemsProcessed = 0;
-                    using (var resp = await RestClient.GetAsync("/KeyfactorApi/Templates"))
+                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status==Active"))
                     {
                         if (!resp.IsSuccessStatusCode)
                         {

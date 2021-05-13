@@ -13,6 +13,9 @@ using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
 using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 using Keyfactor.AnyGateway.CscGlobal.Client;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using Org.BouncyCastle.X509;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
@@ -62,6 +65,71 @@ namespace Keyfactor.AnyGateway.CscGlobal
             BlockingCollection<CAConnectorCertificate> blockingBuffer,
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo, CancellationToken cancelToken)
         {
+            try
+            {
+                var certs = new BlockingCollection<ICertificateResponse>(100);
+            CscGlobalClient.SubmitCertificateListRequestAsync(certs, cancelToken);
+
+            foreach (var currentResponseItem in certs.GetConsumingEnumerable(cancelToken))
+            {
+                if (cancelToken.IsCancellationRequested)
+                {
+                    Logger.Error("Synchronize was canceled.");
+                    break;
+                }
+
+                try
+                {
+                    Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
+                    var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
+
+                    //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from SSLStore
+                    if (certStatus==Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) || certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
+                    {
+
+                        string fileContent=Encoding.ASCII.GetString(Convert.FromBase64String(currentResponseItem?.Certificate));
+                        string fileContent2 = Encoding.UTF8.GetString(Convert.FromBase64String(fileContent)); //Double base64 Encoded for some reason
+                        if (fileContent2.Length > 0)
+                        {
+                                var certData = fileContent2.Replace("\r\n", string.Empty);
+                                var splitCerts = certData.Split(new string[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" }, StringSplitOptions.RemoveEmptyEntries);
+                                foreach (string cert in splitCerts)
+                                {
+                                    if (!cert.Contains(".crt"))
+                                    {
+                                        X509Certificate2 currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
+                                        blockingBuffer.Add(new CAConnectorCertificate
+                                        {
+                                            CARequestID =
+                                                $"{currentResponseItem?.Uuid}-{currentCert.SerialNumber}",
+                                            Certificate = cert,
+                                            SubmissionDate = Convert.ToDateTime(currentResponseItem?.OrderDate),
+                                            Status = certStatus,
+                                            ProductID = $"{currentResponseItem?.CertificateType}"
+                                        });
+                                    }
+                                }
+                        }
+
+
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    Logger.Error("Synchronize was canceled.");
+                    break;
+                }
+            }
+        }
+            catch (AggregateException aggEx)
+            {
+                Logger.Error("SslStore Synchronize Task failed!");
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                // ReSharper disable once PossibleIntendedRethrow
+                throw aggEx;
+            }
+
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
 
         }
 
