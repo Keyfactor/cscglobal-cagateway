@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -56,7 +54,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 {
                     Logger.Trace(JsonConvert.SerializeObject(registerRequest));
                     var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
-                    if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Resposne
+                    if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                     {
                         var errorResponse =
                         JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
@@ -74,10 +72,6 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
 
                 }
-
-
-            return null;
-
         }
 
         public async Task<RenewalResponse> SubmitRenewalAsync(

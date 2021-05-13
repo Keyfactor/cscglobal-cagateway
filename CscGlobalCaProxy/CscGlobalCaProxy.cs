@@ -7,7 +7,6 @@ using CAProxy.AnyGateway;
 using CAProxy.AnyGateway.Interfaces;
 using CAProxy.AnyGateway.Models;
 using CAProxy.Common;
-using CSS.Common;
 using CSS.Common.Logging;
 using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
@@ -15,7 +14,6 @@ using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 using Keyfactor.AnyGateway.CscGlobal.Client;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Org.BouncyCastle.X509;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
@@ -87,12 +85,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     if (certStatus==Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) || certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
                     {
 
-                        string fileContent=Encoding.ASCII.GetString(Convert.FromBase64String(currentResponseItem?.Certificate));
+                        string fileContent=Encoding.ASCII.GetString(Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
                         string fileContent2 = Encoding.UTF8.GetString(Convert.FromBase64String(fileContent)); //Double base64 Encoded for some reason
                         if (fileContent2.Length > 0)
                         {
                                 var certData = fileContent2.Replace("\r\n", string.Empty);
-                                var splitCerts = certData.Split(new string[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" }, StringSplitOptions.RemoveEmptyEntries);
+                                var splitCerts = certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" }, StringSplitOptions.RemoveEmptyEntries);
                                 foreach (string cert in splitCerts)
                                 {
                                     if (!cert.Contains(".crt"))
