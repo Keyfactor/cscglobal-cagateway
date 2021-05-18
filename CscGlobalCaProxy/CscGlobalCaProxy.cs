@@ -38,12 +38,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             try
             {
-                var requestResponse =
+                var revokeResponse =
                     Task.Run(async () => await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36))).Result;
 
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
 
-                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
+                return GetRevokeResult(revokeResponse);
             }
             catch (Exception e)
             {
@@ -219,6 +219,18 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
+        private int GetRevokeResult(IRevokeResponse revokeResponse)
+        {
+            if (revokeResponse.RegistrationError != null)
+            {
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
+            }
+
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
+        }
+
         private EnrollmentResult GetReIssueResult(IReissueResponse reissueResponse)
         {
             if (reissueResponse.RegistrationError != null)
@@ -241,7 +253,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            throw new NotImplementedException();
+            return new CAConnectorCertificate();
         }
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
