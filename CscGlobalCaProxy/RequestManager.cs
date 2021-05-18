@@ -41,7 +41,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
         {
-            throw new NotImplementedException();
+            return new List<CustomField>();
         }
 
         public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)
@@ -107,24 +107,34 @@ namespace Keyfactor.AnyGateway.CscGlobal
             throw new NotImplementedException();
         }
 
-        public ReissueRequest GetReissueRequestRequest(EnrollmentProductInfo productInfo)
+        public ReissueRequest GetReissueRequestRequest(EnrollmentProductInfo productInfo, string uUId,string csr)
         {
+            var bytes = Encoding.UTF8.GetBytes(csr);
+            var encodedString = Convert.ToBase64String(bytes);
+            Char[] delimiters = { ' ' };
+
             return new ReissueRequest
             {
-                Uuid = productInfo.ProductParameters["Uuid"],
-                Csr = GetCsr(productInfo),
-                ServerSoftware = productInfo.ProductParameters["Server Software"],
+                Uuid = uUId,
+                Csr= encodedString,
+                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
+                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
+                Term = productInfo.ProductParameters["Term"],
+                ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
+                ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
+                ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
                 DomainControlValidation = GetDomainControlValidation(productInfo),
                 Notifications = GetNotifications(productInfo),
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                CustomFields = GetCustomFields(productInfo),
-                EvCertificateDetails = GetEvCertificateDetails(productInfo)
+                OrganizationContact = productInfo.ProductParameters["Organization Contact"],
+                BusinessUnit = productInfo.ProductParameters["Business Unit"],
+                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"])
             };
         }
 
         private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo)
         {
-            throw new NotImplementedException();
+            return new EvCertificateDetails();
         }
 
         public int MapReturnStatus(string cscGlobalStatus)

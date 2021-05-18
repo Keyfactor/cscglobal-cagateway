@@ -91,14 +91,27 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         public async Task<ReissueResponse> SubmitReissueAsync(
             ReissueRequest reissueRequest)
         {
-            using (var resp = await RestClient.PostAsync("/tls/reissue", new StringContent(
+            using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/reissue", new StringContent(
                 JsonConvert.SerializeObject(reissueRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(reissueRequest));
-                resp.EnsureSuccessStatusCode();
-                var reissueResponse =
-                    JsonConvert.DeserializeObject<ReissueResponse>(await resp.Content.ReadAsStringAsync());
-                return reissueResponse;
+
+                var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
+                if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
+                {
+                    var errorResponse =
+                    JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
+                    ReissueResponse response = new ReissueResponse();
+                    response.RegistrationError = errorResponse;
+                    response.Result = null;
+                    return response;
+                }
+                else
+                {
+                    var reissueResponse =
+                        JsonConvert.DeserializeObject<ReissueResponse>(await resp.Content.ReadAsStringAsync());
+                    return reissueResponse;
+                }
             }
         }
 

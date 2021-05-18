@@ -14,6 +14,7 @@ using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 using Keyfactor.AnyGateway.CscGlobal.Client;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using CSS.Common;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
@@ -26,6 +27,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public string PartnerCode { get; set; }
         public string AuthenticationToken { get; set; }
         public int PageSize { get; set; }
+        public bool EnableTemplateSync { get; set; } = false;
 
         public CscGlobalCaProxy()
         {
@@ -84,6 +86,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from SSLStore
                     if (certStatus==Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) || certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
                     {
+                        //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
+                        string productId = "CscGlobal";
+                        if (EnableTemplateSync)
+                        {
+                            productId = currentResponseItem?.CertificateType;
+                        }
 
                         string fileContent=Encoding.ASCII.GetString(Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
                         string fileContent2 = Encoding.UTF8.GetString(Convert.FromBase64String(fileContent)); //Double base64 Encoded for some reason
@@ -96,15 +104,18 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                     if (!cert.Contains(".crt"))
                                     {
                                         X509Certificate2 currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        blockingBuffer.Add(new CAConnectorCertificate
+                                        if (currentCert.Subject.Contains("boingy"))
                                         {
-                                            CARequestID =
-                                                $"{currentResponseItem?.Uuid}-{currentCert.SerialNumber}",
-                                            Certificate = cert,
-                                            SubmissionDate = Convert.ToDateTime(currentResponseItem?.OrderDate),
-                                            Status = certStatus,
-                                            ProductID = $"{currentResponseItem?.CertificateType}"
-                                        });
+                                            blockingBuffer.Add(new CAConnectorCertificate
+                                            {
+                                                CARequestID =
+                                                    $"{currentResponseItem?.Uuid}-{currentCert.SerialNumber}",
+                                                Certificate = cert,
+                                                SubmissionDate = Convert.ToDateTime(currentResponseItem?.OrderDate),
+                                                Status = certStatus,
+                                                ProductID = productId
+                                            });
+                                        }
                                     }
                                 }
                         }
@@ -146,6 +157,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             IRegistrationResponse enrollmentResponse = null;
             RegistrationRequest enrollmentRequest;
+            CAConnectorCertificate priorCert;
+            ReissueRequest reissueRequest;
+            ReissueResponse reissueResponse;
 
             switch (enrollmentType)
             {
@@ -166,15 +180,25 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             StatusMessage = "You cannot renew and expired cert please perform an new enrollment."
                         };
                     }
-
+                    return GetEnrollmentResult(enrollmentResponse);
                     break;
                 case RequestUtilities.EnrollmentType.Renew:
+                    priorCert = certificateDataReader.GetCertificateRecord(
+                     DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
+
                     break;
                 case RequestUtilities.EnrollmentType.Reissue:
-                    break;
+                    priorCert = certificateDataReader.GetCertificateRecord(
+                      DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
+                    var uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
+                    reissueRequest = _requestManager.GetReissueRequestRequest(productInfo,uUId, csr);
+                    reissueResponse =
+                    Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
+                        .Result;
+                    return GetReIssueResult(reissueResponse);
             }
 
-            return GetEnrollmentResult(enrollmentResponse);
+            return null;
         }
 
         private EnrollmentResult GetEnrollmentResult(IRegistrationResponse registrationResponse)
@@ -197,6 +221,26 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
+        private EnrollmentResult GetReIssueResult(IReissueResponse reissueResponse)
+        {
+            if (reissueResponse.RegistrationError != null)
+            {
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                return new EnrollmentResult
+                {
+                    Status = 30, //failure
+                    StatusMessage = reissueResponse.RegistrationError.Description
+                };
+            }
+
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            return new EnrollmentResult
+            {
+                Status = 9, //success
+                StatusMessage = $"Reissue Succesfully Completed For {reissueResponse?.Result.CommonName}"
+            };
+        }
+
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
             throw new NotImplementedException();
@@ -205,6 +249,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override void Initialize(ICAConnectorConfigProvider configProvider)
         {
             CscGlobalClient = new CscGlobalClient(configProvider);
+            var templateSync=configProvider.CAConnectionData["TemplateSync"].ToString();
+            if(templateSync.ToUpper()=="ON")
+            {
+                EnableTemplateSync = true;
+            }
+
         }
 
         public override void Ping()
