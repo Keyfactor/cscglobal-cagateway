@@ -189,7 +189,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     priorCert = certificateDataReader.GetCertificateRecord(
                       DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     var uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                    reissueRequest = _requestManager.GetReissueRequestRequest(productInfo,uUId, csr);
+                    reissueRequest = _requestManager.GetReissueRequest(productInfo,uUId, csr);
                     reissueResponse =
                     Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
                         .Result;

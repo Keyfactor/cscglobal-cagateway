@@ -34,10 +34,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        private string GetCsr(EnrollmentProductInfo productInfo)
-        {
-            throw new NotImplementedException();
-        }
 
         private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
         {
@@ -86,12 +82,16 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo)
+        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo,string csr)
         {
+            var bytes = Encoding.UTF8.GetBytes(csr);
+            var encodedString = Convert.ToBase64String(bytes);
+            Char[] delimiters = {' '};
+
             return new RenewalRequest
             {
                 Uuid = productInfo.ProductParameters["Uuid"],
-                Csr= GetCsr(productInfo),
+                Csr= encodedString,
                 Term = productInfo.ProductParameters["Term"],
                 ServerSoftware = productInfo.ProductParameters["Server Software"],
                 DomainControlValidation = GetDomainControlValidation(productInfo),
@@ -107,7 +107,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             throw new NotImplementedException();
         }
 
-        public ReissueRequest GetReissueRequestRequest(EnrollmentProductInfo productInfo, string uUId,string csr)
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId,string csr)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
