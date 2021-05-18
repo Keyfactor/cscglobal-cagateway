@@ -23,7 +23,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
         private readonly RequestManager _requestManager;
 
         private ICscGlobalClient CscGlobalClient { get; set; }
-        private ICAConnectorConfigProvider ConfigManager { get; set; }
         public string PartnerCode { get; set; }
         public string AuthenticationToken { get; set; }
         public int PageSize { get; set; }
@@ -155,7 +154,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
 
-            IRegistrationResponse enrollmentResponse = null;
+            IRegistrationResponse enrollmentResponse;
             RegistrationRequest enrollmentRequest;
             CAConnectorCertificate priorCert;
             ReissueRequest reissueRequest;
@@ -181,7 +180,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
                         };
                     }
                     return GetEnrollmentResult(enrollmentResponse);
-                    break;
                 case RequestUtilities.EnrollmentType.Renew:
                     priorCert = certificateDataReader.GetCertificateRecord(
                      DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
@@ -237,7 +235,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new EnrollmentResult
             {
                 Status = 9, //success
-                StatusMessage = $"Reissue Succesfully Completed For {reissueResponse?.Result.CommonName}"
+                StatusMessage = $"Reissue Successfully Completed For {reissueResponse?.Result.CommonName}"
             };
         }
 

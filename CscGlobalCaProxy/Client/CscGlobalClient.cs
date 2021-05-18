@@ -128,7 +128,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
         public async Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId)
         {
-            using (var resp = await RestClient.PutAsync($"/tls/revoke/{uuId}",new StringContent("")))
+            using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}",new StringContent("")))
             {
                 resp.EnsureSuccessStatusCode();
                 var getRevokeResponse =

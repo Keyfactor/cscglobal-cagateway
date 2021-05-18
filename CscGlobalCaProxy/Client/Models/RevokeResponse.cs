@@ -5,8 +5,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client.Models
 {
     public class RevokeResponse : IRevokeResponse
     {
-        [JsonProperty("commonName")] public string CommonName { get; set; }
-        [JsonProperty("certificateType")] public string CertificateType { get; set; }
-        [JsonProperty("status")] public string Status { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public RevokeSuccessResponse RevokeSuccess { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public RegistrationError RegistrationError { get; set; }
     }
 }
