@@ -5,5 +5,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
     public interface IRenewalResponse
     {
         Result Result { get; set; }
+        RegistrationError RegistrationError { get; set; }
+
     }
 }

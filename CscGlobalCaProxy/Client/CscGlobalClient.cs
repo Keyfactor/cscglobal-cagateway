@@ -15,15 +15,8 @@ using Newtonsoft.Json;
 
 namespace Keyfactor.AnyGateway.CscGlobal.Client
 {
-    public sealed class CscGlobalClient:LoggingClientBase, ICscGlobalClient
+    public sealed class CscGlobalClient : LoggingClientBase, ICscGlobalClient
     {
-        private Uri BaseUrl { get; }
-        private HttpClient RestClient { get; }
-        private int PageSize { get; } = 100;
-        private string ApiKey { get; set; }
-        private string Authorization { get; set; }
-
-
         public CscGlobalClient(ICAConnectorConfigProvider config)
         {
             if (config.CAConnectionData.ContainsKey(Constants.CscGlobalApiKey))
@@ -35,43 +28,36 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        private HttpClient ConfigureRestClient()
-        {
-            var clientHandler = new WebRequestHandler();
-            var returnClient = new HttpClient(clientHandler, true) { BaseAddress = BaseUrl };
-            returnClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            returnClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Authorization);
-            returnClient.DefaultRequestHeaders.Add("apikey", ApiKey);
-            return returnClient;
-        }
+        private Uri BaseUrl { get; }
+        private HttpClient RestClient { get; }
+        private int PageSize { get; } = 100;
+        private string ApiKey { get; }
+        private string Authorization { get; }
 
         public async Task<RegistrationResponse> SubmitRegistrationAsync(
             RegistrationRequest registerRequest)
         {
-
-                using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
-                    JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
+            using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
+                JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
+            {
+                Logger.Trace(JsonConvert.SerializeObject(registerRequest));
+                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
-                    Logger.Trace(JsonConvert.SerializeObject(registerRequest));
-                    var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
-                    if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
-                    {
-                        var errorResponse =
-                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
-                        RegistrationResponse response = new RegistrationResponse();
-                        response.RegistrationError = errorResponse;
-                        response.Result = null;
-                        return response;
-                    }
-                    else
-                    {
-                        var registrationResponse =
-                            JsonConvert.DeserializeObject<RegistrationResponse>(await resp.Content.ReadAsStringAsync(), settings);
-                        return registrationResponse;
-                    }
-
-
+                    var errorResponse =
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(),
+                            settings);
+                    var response = new RegistrationResponse();
+                    response.RegistrationError = errorResponse;
+                    response.Result = null;
+                    return response;
                 }
+
+                var registrationResponse =
+                    JsonConvert.DeserializeObject<RegistrationResponse>(await resp.Content.ReadAsStringAsync(),
+                        settings);
+                return registrationResponse;
+            }
         }
 
         public async Task<RenewalResponse> SubmitRenewalAsync(
@@ -81,7 +67,19 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 JsonConvert.SerializeObject(renewalRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(renewalRequest));
-                resp.EnsureSuccessStatusCode();
+
+                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
+                {
+                    var errorResponse =
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(),
+                            settings);
+                    var response = new RenewalResponse();
+                    response.RegistrationError = errorResponse;
+                    response.Result = null;
+                    return response;
+                }
+
                 var renewalResponse =
                     JsonConvert.DeserializeObject<RenewalResponse>(await resp.Content.ReadAsStringAsync());
                 return renewalResponse;
@@ -96,22 +94,21 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             {
                 Logger.Trace(JsonConvert.SerializeObject(reissueRequest));
 
-                var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
+                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
-                    JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
-                    ReissueResponse response = new ReissueResponse();
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(),
+                            settings);
+                    var response = new ReissueResponse();
                     response.RegistrationError = errorResponse;
                     response.Result = null;
                     return response;
                 }
-                else
-                {
-                    var reissueResponse =
-                        JsonConvert.DeserializeObject<ReissueResponse>(await resp.Content.ReadAsStringAsync());
-                    return reissueResponse;
-                }
+
+                var reissueResponse =
+                    JsonConvert.DeserializeObject<ReissueResponse>(await resp.Content.ReadAsStringAsync());
+                return reissueResponse;
             }
         }
 
@@ -128,15 +125,15 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
         public async Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId)
         {
-            using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}",new StringContent("")))
+            using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}", new StringContent("")))
             {
-
-                var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
+                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
-                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
-                    RevokeResponse response = new RevokeResponse();
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(),
+                            settings);
+                    var response = new RevokeResponse();
                     response.RegistrationError = errorResponse;
                     response.RevokeSuccess = null;
                     return response;
@@ -145,12 +142,11 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 var getRevokeResponse =
                     JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
                 return getRevokeResponse;
-
-                
             }
         }
 
-        public async Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct)
+        public async Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc,
+            CancellationToken ct)
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
@@ -202,7 +198,6 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                                 Logger.Trace($"Adding {r} blocked. Retry");
                             }
                         } while (batchItemsProcessed < batchCount); //batch loop
-
                     }
 
                     //assume that if we process less records than requested that we have reached the end of the certificate list
@@ -232,7 +227,16 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
 
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+        }
 
+        private HttpClient ConfigureRestClient()
+        {
+            var clientHandler = new WebRequestHandler();
+            var returnClient = new HttpClient(clientHandler, true) {BaseAddress = BaseUrl};
+            returnClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            returnClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Authorization);
+            returnClient.DefaultRequestHeaders.Add("apikey", ApiKey);
+            return returnClient;
         }
     }
 }

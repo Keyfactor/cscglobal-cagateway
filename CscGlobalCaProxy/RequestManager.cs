@@ -32,13 +32,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo,string csr)
+        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            Char[] delimiters = { ' '};
+            char[] delimiters = {' '};
 
-            return new RegistrationRequest()
+            return new RegistrationRequest
             {
                 Csr = encodedString,
                 ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
@@ -61,26 +61,33 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new Notifications
             {
                 Enabled = true,
-                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"].Split(',').ToList()
+                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"]
+                    .Split(',').ToList()
             };
         }
 
-        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo,string csr)
+        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            Char[] delimiters = {' '};
+            char[] delimiters = {' '};
 
             return new RenewalRequest
             {
-                Uuid = productInfo.ProductParameters["Uuid"],
-                Csr= encodedString,
+                Uuid = uUId,
+                Csr = encodedString,
+                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
+                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
                 Term = productInfo.ProductParameters["Term"],
-                ServerSoftware = productInfo.ProductParameters["Server Software"],
+                ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
+                ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
+                ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
                 DomainControlValidation = GetDomainControlValidation(productInfo),
                 Notifications = GetNotifications(productInfo),
+                OrganizationContact = productInfo.ProductParameters["Organization Contact"],
+                BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                CustomFields = GetCustomFields(productInfo),
                 SubjectAlternativeNames = GetSubjectAlternativeNames(productInfo)
             };
         }
@@ -90,16 +97,16 @@ namespace Keyfactor.AnyGateway.CscGlobal
             throw new NotImplementedException();
         }
 
-        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId,string csr)
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            Char[] delimiters = { ' ' };
+            char[] delimiters = {' '};
 
             return new ReissueRequest
             {
                 Uuid = uUId,
-                Csr= encodedString,
+                Csr = encodedString,
                 ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
                 CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
                 Term = productInfo.ProductParameters["Term"],
