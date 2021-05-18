@@ -114,7 +114,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
         public async Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId)
         {
-            using (var resp = await RestClient.GetAsync($"/tls/certificate/{certificateId}"))
+            using (var resp = await RestClient.GetAsync($"/dbs/api/v2/tls/certificate/{certificateId}"))
             {
                 resp.EnsureSuccessStatusCode();
                 var getCertificateResponse =

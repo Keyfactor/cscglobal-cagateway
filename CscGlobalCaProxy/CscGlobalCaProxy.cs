@@ -157,7 +157,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             ReissueRequest reissueRequest;
             RenewalRequest renewRequest;
 
-            var uUId = string.Empty;
+            string uUId;
             switch (enrollmentType)
             {
                 case RequestUtilities.EnrollmentType.New:
@@ -218,7 +218,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new EnrollmentResult
             {
                 Status = 9, //success
-                StatusMessage = $"Renewal Successfully Completed For {renewResponse?.Result.CommonName}"
+                StatusMessage = $"Renewal Successfully Completed For {renewResponse.Result.CommonName}"
             };
         }
 
@@ -239,7 +239,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             {
                 Status = 9, //success
                 StatusMessage =
-                    $"Order Successfully Created With Order Number {registrationResponse?.Result.CommonName}"
+                    $"Order Successfully Created With Order Number {registrationResponse.Result.CommonName}"
             };
         }
 
@@ -271,13 +271,25 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new EnrollmentResult
             {
                 Status = 9, //success
-                StatusMessage = $"Reissue Successfully Completed For {reissueResponse?.Result.CommonName}"
+                StatusMessage = $"Reissue Successfully Completed For {reissueResponse.Result.CommonName}"
             };
         }
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            return new CAConnectorCertificate();
+            var keyfactorCaId = caRequestId.Substring(38);
+            var certificateResponse =
+                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
+                    .Result;
+
+            return new CAConnectorCertificate
+            {
+                CARequestID = keyfactorCaId,
+                Certificate = certificateResponse.Certificate,
+                ResolutionDate = Convert.ToDateTime(certificateResponse.EffectiveDate),
+                Status = _requestManager.MapReturnStatus(certificateResponse.Status),
+                SubmissionDate = Convert.ToDateTime(certificateResponse.OrderDate)
+            };
         }
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
