@@ -141,12 +141,11 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                     response.RevokeSuccess = null;
                     return response;
                 }
-                else
-                {
-                    var getRevokeResponse =
-                        JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
-                    return getRevokeResponse;
-                }
+
+                var getRevokeResponse =
+                    JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
+                return getRevokeResponse;
+
                 
             }
         }
