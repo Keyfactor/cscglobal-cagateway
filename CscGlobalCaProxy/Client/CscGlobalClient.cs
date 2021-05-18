@@ -130,10 +130,24 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         {
             using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}",new StringContent("")))
             {
-                resp.EnsureSuccessStatusCode();
-                var getRevokeResponse =
-                    JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
-                return getRevokeResponse;
+
+                var settings = new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore };
+                if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
+                {
+                    var errorResponse =
+                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(), settings);
+                    RevokeResponse response = new RevokeResponse();
+                    response.RegistrationError = errorResponse;
+                    response.RevokeSuccess = null;
+                    return response;
+                }
+                else
+                {
+                    var getRevokeResponse =
+                        JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
+                    return getRevokeResponse;
+                }
+                
             }
         }
 
