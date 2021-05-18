@@ -17,23 +17,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
             _cscGlobalCaProxy = cscGlobalCaProxy;
         }
 
-        public RegistrationRequest GetAdminContact(EnrollmentProductInfo productInfo)
-        {
-            return new RegistrationRequest
-            {
-                CertificateType = productInfo.ProductParameters["Certificate Type"],
-                BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                Term = productInfo.ProductParameters["Term"],
-                ServerSoftware = productInfo.ProductParameters["Server Software"],
-                OrganizationContact = productInfo.ProductParameters["Organization Contact"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                DomainControlValidation = GetDomainControlValidation(productInfo),
-                Notifications = GetNotifications(productInfo),
-                CustomFields = GetCustomFields(productInfo),
-                Csr = GetCsr(productInfo)
-            };
-        }
-
 
         private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
         {
