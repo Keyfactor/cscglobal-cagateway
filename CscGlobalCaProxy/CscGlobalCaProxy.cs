@@ -106,7 +106,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                     if (!cert.Contains(".crt"))
                                     {
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        if (currentCert.Subject.Contains("boingy"))
+                                        if (currentCert.Subject.Contains("boingy")) //todo fix this
                                             blockingBuffer.Add(new CAConnectorCertificate
                                             {
                                                 CARequestID =
@@ -279,7 +279,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             var keyfactorCaId = caRequestId.Substring(38);
             var certificateResponse =
-                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
+                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(caRequestId.Substring(0,36)))
                     .Result;
 
             return new CAConnectorCertificate
