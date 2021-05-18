@@ -39,7 +39,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             try
             {
                 var requestResponse =
-                    Task.Run(async () => await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId)).Result;
+                    Task.Run(async () => await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36))).Result;
 
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
 

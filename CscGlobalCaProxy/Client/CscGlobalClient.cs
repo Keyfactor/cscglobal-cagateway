@@ -130,7 +130,6 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         {
             using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}",new StringContent("")))
             {
-                resp.EnsureSuccessStatusCode();
                 var getRevokeResponse =
                     JsonConvert.DeserializeObject<RevokeResponse>(await resp.Content.ReadAsStringAsync());
                 return getRevokeResponse;
