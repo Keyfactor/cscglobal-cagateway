@@ -18,12 +18,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
         }
 
 
-        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
+        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo) //todo add PO Number to UI and fill in using this
         {
             return new List<CustomField>();
         }
 
-        public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)
+        public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)  //todo fix to pull from UI
         {
             return new DomainControlValidation
             {
@@ -47,7 +47,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
                 DomainControlValidation = GetDomainControlValidation(productInfo),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -82,7 +82,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
                 DomainControlValidation = GetDomainControlValidation(productInfo),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -97,7 +97,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             throw new NotImplementedException();
         }
 
-        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr)
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr)  //todo extract and make generic for renew,enroll and reissue
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
@@ -113,7 +113,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
                 DomainControlValidation = GetDomainControlValidation(productInfo),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -122,7 +122,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo)
+        private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo) //todo fix this once I find out from Walt the standard requests.
         {
             return new EvCertificateDetails();
         }
