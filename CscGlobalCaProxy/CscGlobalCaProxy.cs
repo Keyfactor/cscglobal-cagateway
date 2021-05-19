@@ -103,7 +103,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                     if (!cert.Contains(".crt"))
                                     {
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        if (currentCert.Subject.Contains("boingy")) //todo fix this need to find non root/intermediate cert
+                                        if (!currentCert.Subject.Contains("AAA Certificate Services") && !currentCert.Subject.Contains("USERTrust RSA Certification Authority") && !currentCert.Subject.Contains("Trusted Secure Certificate Authority 5")) //todo fix this
                                             blockingBuffer.Add(new CAConnectorCertificate
                                             {
                                                 CARequestID =
