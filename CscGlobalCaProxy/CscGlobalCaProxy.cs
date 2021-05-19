@@ -36,7 +36,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
             {
                 var revokeResponse =
                     Task.Run(async () =>
-                        await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36))).Result; //todo fix to use pipe delimiter
+                            await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
+                        .Result; //todo fix to use pipe delimiter
 
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
 
@@ -59,7 +60,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override void Synchronize(ICertificateDataReader certificateDataReader,
             BlockingCollection<CAConnectorCertificate> blockingBuffer,
-            CertificateAuthoritySyncInfo certificateAuthoritySyncInfo, CancellationToken cancelToken) //todo need to add paging
+            CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
+            CancellationToken cancelToken) //todo need to add paging
         {
             try
             {
@@ -103,7 +105,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                     if (!cert.Contains(".crt"))
                                     {
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        if (!currentCert.Subject.Contains("AAA Certificate Services") && !currentCert.Subject.Contains("USERTrust RSA Certification Authority") && !currentCert.Subject.Contains("Trusted Secure Certificate Authority 5")) //todo fix this
+                                        if (!currentCert.Subject.Contains("AAA Certificate Services") &&
+                                            !currentCert.Subject.Contains("USERTrust RSA Certification Authority") &&
+                                            !currentCert.Subject.Contains("Trusted Secure Certificate Authority 5"))
                                             blockingBuffer.Add(new CAConnectorCertificate
                                             {
                                                 CARequestID =
@@ -219,7 +223,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        private EnrollmentResult GetEnrollmentResult(IRegistrationResponse registrationResponse) //todo look at fixing this to make generic for all three returns
+        private EnrollmentResult
+            GetEnrollmentResult(
+                IRegistrationResponse registrationResponse) //todo look at fixing this to make generic for all three returns
         {
             if (registrationResponse.RegistrationError != null)
             {
@@ -276,7 +282,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             var keyfactorCaId = caRequestId.Substring(38); //todo fix to use pipe delimiter
             var certificateResponse =
-                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(caRequestId.Substring(0,36)))
+                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(caRequestId.Substring(0, 36)))
                     .Result;
 
             return new CAConnectorCertificate
