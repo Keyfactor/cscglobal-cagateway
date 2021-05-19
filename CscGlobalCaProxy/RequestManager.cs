@@ -18,9 +18,15 @@ namespace Keyfactor.AnyGateway.CscGlobal
         }
 
 
-        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo) //todo add PO Number to UI and fill in using this
+        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo) //todo add PO Number to UI and fill in using this make sure they have field setup
         {
-            return new List<CustomField>();
+            var poNumber=new CustomField();
+            poNumber.Name = "PO Number";
+            poNumber.Value = productInfo.ProductParameters["PO Number"];
+            var customFieldList=new List<CustomField>();
+            customFieldList.Add(poNumber);
+
+            return customFieldList;
         }
 
         public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)
@@ -52,7 +58,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"])
+                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
+                CustomFields = GetCustomFields(productInfo)
             };
         }
 
@@ -61,7 +68,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new Notifications
             {
                 Enabled = true,
-                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"]
+                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"]//todo fix spelling error in UI and  here
                     .Split(',').ToList()
             };
         }
@@ -88,7 +95,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                SubjectAlternativeNames = GetSubjectAlternativeNames(productInfo)
+                SubjectAlternativeNames = GetSubjectAlternativeNames(productInfo),
+                CustomFields = GetCustomFields(productInfo)
             };
         }
 
@@ -118,7 +126,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"])
+                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
+                CustomFields = GetCustomFields(productInfo)
             };
         }
 

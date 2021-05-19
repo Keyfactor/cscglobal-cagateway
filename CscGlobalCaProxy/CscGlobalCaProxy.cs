@@ -225,7 +225,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         private EnrollmentResult
             GetEnrollmentResult(
-                IRegistrationResponse registrationResponse) //todo look at fixing this to make generic for all three returns
+                IRegistrationResponse registrationResponse)
         {
             if (registrationResponse.RegistrationError != null)
             {
