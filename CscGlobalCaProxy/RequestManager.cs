@@ -23,7 +23,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new List<CustomField>();
         }
 
-        public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)  //todo fix to pull from UI
+        public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)
         {
             return new DomainControlValidation
             {
@@ -92,12 +92,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo)
+        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo) //todo fix this to return Sans
         {
-            throw new NotImplementedException();
+            return null;
         }
 
-        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr)  //todo extract and make generic for renew,enroll and reissue
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr) 
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
