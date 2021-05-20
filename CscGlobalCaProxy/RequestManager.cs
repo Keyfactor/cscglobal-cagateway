@@ -18,7 +18,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         }
 
 
-        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo) //todo add PO Number to UI and fill in using this make sure they have field setup
+        private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
         {
             var poNumber=new CustomField();
             poNumber.Name = "PO Number";
