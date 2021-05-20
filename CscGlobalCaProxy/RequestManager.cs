@@ -56,7 +56,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
                 DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -89,7 +89,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return new Notifications
             {
                 Enabled = true,
-                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Seperated"]//todo fix spelling error in UI and  here
+                AdditionalNotificationEmails = productInfo.ProductParameters["Notification Email(s) Comma Separated"]
                     .Split(',').ToList()
             };
         }
@@ -113,7 +113,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
                 DomainControlValidation = GetDomainControlValidation(methodType, commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -173,7 +173,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
-                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
+                ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
                 DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
@@ -185,7 +185,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo) //todo fix this once I find out from Walt the standard requests.
+        private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo)
         {
             var evDetails = new EvCertificateDetails();
             evDetails.Country = productInfo.ProductParameters["Organization Country"];

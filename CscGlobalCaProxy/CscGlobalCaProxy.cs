@@ -61,7 +61,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override void Synchronize(ICertificateDataReader certificateDataReader,
             BlockingCollection<CAConnectorCertificate> blockingBuffer,
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
-            CancellationToken cancelToken) //todo need to add paging
+            CancellationToken cancelToken)
         {
             try
             {
@@ -144,7 +144,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             EnrollmentProductInfo productInfo,
             PKIConstants.X509.RequestFormat requestFormat, RequestUtilities.EnrollmentType enrollmentType)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public override EnrollmentResult Enroll(ICertificateDataReader certificateDataReader, string csr,
