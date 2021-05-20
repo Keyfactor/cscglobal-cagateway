@@ -20,6 +20,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client.Models
         [JsonProperty("applicantLastName")] public string ApplicantLastName { get; set; }
         [JsonProperty("applicantEmailAddress")] public string ApplicantEmailAddress { get; set; }
         [JsonProperty("applicantPhoneNumber")] public string ApplicantPhoneNumber { get; set; }
-
+        [JsonProperty("evCertificateDetails",NullValueHandling=NullValueHandling.Ignore)] public EvCertificateDetails EvCertificateDetails { get; set; }
+        [JsonProperty("subjectAlternativeNames", NullValueHandling = NullValueHandling.Ignore)] public List<SubjectAlternativeName> SubjectAlternativeNames { get; set; }
     }
 }

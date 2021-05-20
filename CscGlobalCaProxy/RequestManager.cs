@@ -29,38 +29,59 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return customFieldList;
         }
 
-        public DomainControlValidation GetDomainControlValidation(EnrollmentProductInfo productInfo)
+        public DomainControlValidation GetDomainControlValidation(string methodType,string emailAddress)
         {
-            return new DomainControlValidation
-            {
-                MethodType = productInfo.ProductParameters["Domain Control Validation Method"],
-                EmailAddress = productInfo.ProductParameters["DCV Email (admin@yourdomain.com)"]
-            };
+                return new DomainControlValidation
+                {
+                    MethodType = methodType,
+                    EmailAddress = emailAddress
+                };
         }
 
-        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr)
+        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr, Dictionary<string, string[]> sans)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
             char[] delimiters = {' '};
+            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
+            var certificateType = GetCertificateType(productInfo.ProductID);
 
             return new RegistrationRequest
             {
                 Csr = encodedString,
-                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
-                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
+                ServerSoftware = "-1", //Just default to other, user does not need to fill this in
+                CertificateType = certificateType,
                 Term = productInfo.ProductParameters["Term"],
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
                 ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
-                DomainControlValidation = GetDomainControlValidation(productInfo),
+                DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                CustomFields = GetCustomFields(productInfo)
+                ShowPrice = true,//User should not have to fill this out
+                CustomFields = GetCustomFields(productInfo),
+                SubjectAlternativeNames= certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
+                EvCertificateDetails = certificateType=="3"?GetEvCertificateDetails(productInfo):null
             };
+        }
+
+        private string GetCertificateType(string productID)
+        {
+            switch(productID)
+            {
+                case "CscGlobal-Premium":
+                    return "0";
+                case "CscGlobal-EV":
+                    return "3";
+                case "CscGlobal-UCC":
+                    return "2";
+                case "CscGlobal-Wildcard":
+                    return "1";
+            }
+            return "-1";
         }
 
         public Notifications GetNotifications(EnrollmentProductInfo productInfo)
@@ -73,67 +94,102 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr)
+        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr, Dictionary<string, string[]> sans)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
             char[] delimiters = {' '};
+            var commonNameValidationEmail= productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
+            var certificateType = GetCertificateType(productInfo.ProductID);
 
             return new RenewalRequest
             {
                 Uuid = uUId,
                 Csr = encodedString,
-                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
-                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
+                ServerSoftware = "-1",
+                CertificateType = certificateType,
                 Term = productInfo.ProductParameters["Term"],
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
                 ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
-                DomainControlValidation = GetDomainControlValidation(productInfo),
+                DomainControlValidation = GetDomainControlValidation(methodType, commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                SubjectAlternativeNames = GetSubjectAlternativeNames(productInfo),
-                CustomFields = GetCustomFields(productInfo)
+                ShowPrice = true,
+                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
+                CustomFields = GetCustomFields(productInfo),
+                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
-        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo) //todo fix this to return Sans
+        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo,Dictionary<string, string[]> sans)
         {
-            return null;
+            var subjectNameList=new List<SubjectAlternativeName>();
+            string[] emailAddresses;
+            var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
+
+            foreach (var k in sans.Keys)
+            {
+                var san = new SubjectAlternativeName();
+                san.DomainName = sans[k][0];
+                emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
+                if (methodType.ToUpper() == "EMAIL")
+                {
+                    foreach(var email in emailAddresses)
+                    {
+                        san.DomainControlValidation = GetDomainControlValidation(methodType, email);
+                    }
+                }
+                else //it is a CNAME validation so no email is needed
+                {
+                    san.DomainControlValidation = GetDomainControlValidation(methodType, "");
+                }
+                               
+                subjectNameList.Add(san);
+            }
+
+            return subjectNameList;
         }
 
-        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr) 
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr, Dictionary<string, string[]> sans) 
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
             char[] delimiters = {' '};
+            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
+            var certificateType = GetCertificateType(productInfo.ProductID);
 
             return new ReissueRequest
             {
                 Uuid = uUId,
                 Csr = encodedString,
-                ServerSoftware = productInfo.ProductParameters["Server Software"].Split(delimiters)[0],
-                CertificateType = productInfo.ProductParameters["Certificate Type"].Split(delimiters)[0],
+                ServerSoftware = "-1",
+                CertificateType = GetCertificateType(productInfo.ProductID),
                 Term = productInfo.ProductParameters["Term"],
                 ApplicantFirstName = productInfo.ProductParameters["Applicant First Name"],
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
                 ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"], //todo find out why only foreign numbers supported
-                DomainControlValidation = GetDomainControlValidation(productInfo),
+                DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = Convert.ToBoolean(productInfo.ProductParameters["Show Price"]),
-                CustomFields = GetCustomFields(productInfo)
+                ShowPrice = true,
+                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
+                CustomFields = GetCustomFields(productInfo),
+                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
         private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo) //todo fix this once I find out from Walt the standard requests.
         {
-            return new EvCertificateDetails();
+            var evDetails = new EvCertificateDetails();
+            evDetails.Country = productInfo.ProductParameters["Organization Country"];
+            return evDetails;
         }
 
         public int MapReturnStatus(string cscGlobalStatus)

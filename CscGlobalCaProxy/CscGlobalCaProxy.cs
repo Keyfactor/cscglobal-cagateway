@@ -166,7 +166,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     IRegistrationResponse enrollmentResponse;
                     if (!productInfo.ProductParameters.ContainsKey("PriorCertSN"))
                     {
-                        enrollmentRequest = _requestManager.GetRegistrationRequest(productInfo, csr);
+                        enrollmentRequest = _requestManager.GetRegistrationRequest(productInfo, csr, san);
                         enrollmentResponse =
                             Task.Run(async () => await CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest))
                                 .Result;
@@ -185,7 +185,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                    renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr);
+                    renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
                     var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
                         .Result;
                     return GetRenewResponse(renewResponse);
@@ -194,7 +194,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                    reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr);
+                    reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
                     var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
                         .Result;
                     return GetReIssueResult(reissueResponse);

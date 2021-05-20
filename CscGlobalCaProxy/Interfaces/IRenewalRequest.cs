@@ -21,6 +21,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
         string ApplicantEmailAddress { get; set; }
         string ApplicantPhoneNumber { get; set; }
         List<SubjectAlternativeName> SubjectAlternativeNames { get; set; }
+        EvCertificateDetails EvCertificateDetails { get; set; }
 
     }
 }
