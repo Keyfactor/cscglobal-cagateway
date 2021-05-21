@@ -1,0 +1,114 @@
+{
+  "Id": 999999,
+  "CommonName": "CscGlobal-Premium",
+  "TemplateName": "CscGlobal-Premium",
+  "Oid": "Replace OID",
+  "KeySize": "2048",
+  "KeyType": "RSA",
+  "ForestRoot": "keyfactor.lab",
+  "FriendlyName": "Replace Friendly Name",
+  "KeyRetention": "AfterExpiration",
+  "KeyRetentionDays": 55,
+  "KeyArchival": false,
+  "EnrollmentFields": [
+    {
+      "Id": 2222440,
+      "Name": "Term",
+      "Options": [
+        "12",
+		"24",
+		"36",
+		"48",
+		"60",
+		"72"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222441,
+      "Name": "Applicant First Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222442,
+      "Name": "Applicant Last Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222443,
+      "Name": "Applicant Email Address",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222444,
+      "Name": "Applicant Phone (+nn.nnnnnnnn)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222450,
+      "Name": "Domain Control Validation Method",
+      "Options": [
+        	"EMAIL",
+		"CNAME"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222460,
+      "Name": "CN DCV Email (admin@yourdomain.com)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222470,
+      "Name": "Organization Contact",
+      "Options": [
+        	"BJC Health System"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222471,
+      "Name": "Business Unit",
+      "Options": [
+        	"Cert API Testing"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222480,
+      "Name": "Notification Email(s) Comma Separated",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222485,
+      "Name": "PO Number",
+      "Options": [
+	""
+      ],
+      "DataType": 1
+    }
+  ],
+  "AllowedEnrollmentTypes": 7,
+  "TemplateRegexes": [],
+  "UseAllowedRequesters": false,
+  "AllowedRequesters": [],
+  "DisplayName": "Replace Display Name"
+}

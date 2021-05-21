@@ -1,0 +1,122 @@
+{
+  "Id": 999999,
+  "CommonName": "CscGlobal-UCC",
+  "TemplateName": "CscGlobal-UCC",
+  "Oid": "Replace OID",
+  "KeySize": "2048",
+  "KeyType": "RSA",
+  "ForestRoot": "keyfactor.lab",
+  "FriendlyName": "Replace Friendly Name",
+  "KeyRetention": "AfterExpiration",
+  "KeyRetentionDays": 55,
+  "KeyArchival": false,
+  "EnrollmentFields": [
+    {
+      "Id": 2222540,
+      "Name": "Term",
+      "Options": [
+        "12",
+		"24",
+		"36",
+		"48",
+		"60",
+		"72"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222541,
+      "Name": "Applicant First Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222542,
+      "Name": "Applicant Last Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222543,
+      "Name": "Applicant Email Address",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222544,
+      "Name": "Applicant Phone (+nn.nnnnnnnn)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222550,
+      "Name": "Domain Control Validation Method",
+      "Options": [
+        	"EMAIL",
+		"CNAME"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222555,
+      "Name": "CN DCV Email (admin@yourdomain.com)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222560,
+      "Name": "Addtl Sans Comma Separated DVC Emails",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222570,
+      "Name": "Organization Contact",
+      "Options": [
+        	"BJC Health System"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222571,
+      "Name": "Business Unit",
+      "Options": [
+        	"Cert API Testing"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 2222580,
+      "Name": "Notification Email(s) Comma Separated",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 2222585,
+      "Name": "PO Number",
+      "Options": [
+	""
+      ],
+      "DataType": 1
+    }
+  ],
+  "AllowedEnrollmentTypes": 7,
+  "TemplateRegexes": [],
+  "UseAllowedRequesters": false,
+  "AllowedRequesters": [],
+  "DisplayName": "Replace Display Name"
+}
