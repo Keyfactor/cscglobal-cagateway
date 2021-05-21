@@ -15,6 +15,7 @@ using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
 using Keyfactor.AnyGateway.CscGlobal.Interfaces;
+using Newtonsoft.Json;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
@@ -34,13 +35,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             try
             {
+                Logger.Trace($"Staring Revoke Method");
                 var revokeResponse =
                     Task.Run(async () =>
                             await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
                         .Result; //todo fix to use pipe delimiter
 
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
+                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
                 return GetRevokeResult(revokeResponse);
             }
             catch (Exception e)
@@ -63,6 +64,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
             CancellationToken cancelToken)
         {
+            Logger.Trace($"Entering Sync Process");
             try
             {
                 var certs = new BlockingCollection<ICertificateResponse>(100);
@@ -81,7 +83,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                         Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
                         var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
 
-                        //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from SSLStore
+                        //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
                         if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
                             certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
                         {
@@ -95,6 +97,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             var fileContent2 =
                                 Encoding.UTF8.GetString(
                                     Convert.FromBase64String(fileContent)); //Double base64 Encoded for some reason
+
+                            Logger.Trace($"Certificate Content: {fileContent2}");
+
                             if (fileContent2.Length > 0)
                             {
                                 var certData = fileContent2.Replace("\r\n", string.Empty);
@@ -104,6 +109,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                 foreach (var cert in splitCerts)
                                     if (!cert.Contains(".crt"))
                                     {
+                                        Logger.Trace($"Split Cert Value: {cert}");
+
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
                                         if (!currentCert.Subject.Contains("AAA Certificate Services") &&
                                             !currentCert.Subject.Contains("USERTrust RSA Certification Authority") &&
@@ -130,7 +137,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             }
             catch (AggregateException aggEx)
             {
-                Logger.Error("SslStore Synchronize Task failed!");
+                Logger.Error("Csc Global Synchronize Task failed!");
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 // ReSharper disable once PossibleIntendedRethrow
                 throw aggEx;
@@ -162,6 +169,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             switch (enrollmentType)
             {
                 case RequestUtilities.EnrollmentType.New:
+                    Logger.Trace($"Entering New Enrollment");
                     //If they renewed an expired cert it gets here and this will not be supported
                     IRegistrationResponse enrollmentResponse;
                     if (!productInfo.ProductParameters.ContainsKey("PriorCertSN"))
@@ -182,19 +190,23 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                     return GetEnrollmentResult(enrollmentResponse);
                 case RequestUtilities.EnrollmentType.Renew:
+                    Logger.Trace($"Entering Renew Enrollment");
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
                     renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
+                    Logger.Trace($"Renewal JSON: {JsonConvert.SerializeObject(renewRequest)}");
                     var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
                         .Result;
                     return GetRenewResponse(renewResponse);
 
                 case RequestUtilities.EnrollmentType.Reissue:
+                    Logger.Trace($"Entering Reissue Enrollment");
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
                     reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
+                    Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
                     var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
                         .Result;
                     return GetReIssueResult(reissueResponse);
@@ -280,10 +292,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
+            Logger.Trace($"Entering Get Single Certificate");
             var keyfactorCaId = caRequestId.Substring(38); //todo fix to use pipe delimiter
             var certificateResponse =
                 Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(caRequestId.Substring(0, 36)))
                     .Result;
+
+            Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
 
             return new CAConnectorCertificate
             {
