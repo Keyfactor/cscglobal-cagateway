@@ -67,7 +67,7 @@ jobs:
       - name: Archive Files
         run: |
            md ${{ github.workspace }}\zip\Keyfactor
-           Compress-Archive -Path ${{ github.workspace }}\src\GoogleCAProxy\bin\Release\*.dll,${{ github.workspace }}\src\GoogleCAProxy\bin\Release\app.config -DestinationPath ${{ github.workspace }}\zip\Keyfactor\$Env:REPO_NAME.zip -Force
+           Compress-Archive -Path ${{ github.workspace }}\src\CscGlobal-AnyGateway\bin\Release\*.dll,${{ github.workspace }}\src\CscGlobal-AnyGateway\bin\Release\app.config -DestinationPath ${{ github.workspace }}\zip\Keyfactor\$Env:REPO_NAME.zip -Force
       
 
       - name: Upload a Build Artifact
