@@ -6,11 +6,11 @@
 <!-- add integration specific information below -->
 *** 
 # Getting Started
-##Prerequsites
+## Prerequsites
 To begin, you must have the CA Gateway Service installed and operational before attempting to configure the CSC Global plugin. Follow the installation instructions
 [here]().
 
-##Configuration
+## Configuration
 It is important to note that importing the  Csc Global configuration into the CA Gateway prior to installing the binaries must be completed. Additionally, the CA Gateway service
 must be running in order to succesfully import the configuation. When the CA Gateway service starts it will attempt to validate the connection information to 
 the CA.  Without the imported configuration, the service will fail to start.
