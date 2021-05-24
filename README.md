@@ -82,7 +82,15 @@ The below example configuration can be modified and saved to the CA Gateway serv
 }
 ```
 
-##Install
+## Enrollment
+There are 4 different templates used in enrollment.  There is an EV Template, Premium Template, UCC Template and Wildcard Template.  Below is a short video description of each
+template and how they work with the enrollment process.
+
+### CSC Global EV Template
+
+Video(https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
+
+## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
 (C:\\Program Files\\Keyfactor\\Keyfactor CA Gateway by default). These files can be found in the offical release build artifacts in Github.
 
