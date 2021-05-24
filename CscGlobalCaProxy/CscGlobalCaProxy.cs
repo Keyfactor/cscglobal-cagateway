@@ -25,7 +25,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public CscGlobalCaProxy()
         {
-            _requestManager = new RequestManager(this);
+            _requestManager = new RequestManager();
         }
 
         private ICscGlobalClient CscGlobalClient { get; set; }
@@ -42,11 +42,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
                         .Result; //todo fix to use pipe delimiter
 
                 Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-                return GetRevokeResult(revokeResponse);
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                return _requestManager.GetRevokeResult(revokeResponse);
             }
             catch (Exception e)
             {
                 Logger.Error($"An Error has occurred during the revoke process {e.Message}");
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
             }
         }
@@ -64,7 +66,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
             CancellationToken cancelToken)
         {
-            Logger.Trace($"Entering Sync Process");
+            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
                 var certs = new BlockingCollection<ICertificateResponse>(100);
@@ -123,7 +125,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                                 SubmissionDate = Convert.ToDateTime(currentResponseItem?.OrderDate),
                                                 Status = certStatus,
                                                 ProductID = productId
-                                            });
+                                            }, cancelToken);
                                     }
                             }
                         }
@@ -175,9 +177,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     if (!productInfo.ProductParameters.ContainsKey("PriorCertSN"))
                     {
                         enrollmentRequest = _requestManager.GetRegistrationRequest(productInfo, csr, san);
+                        Logger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
                         enrollmentResponse =
                             Task.Run(async () => await CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest))
                                 .Result;
+                        Logger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
                     }
                     else
                     {
@@ -187,119 +191,53 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             StatusMessage = "You cannot renew and expired cert please perform an new enrollment."
                         };
                     }
-
-                    return GetEnrollmentResult(enrollmentResponse);
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                    return _requestManager.GetEnrollmentResult(enrollmentResponse);
                 case RequestUtilities.EnrollmentType.Renew:
                     Logger.Trace($"Entering Renew Enrollment");
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
+                    Logger.Trace($"Renew uUId: {uUId}");
                     renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
-                    Logger.Trace($"Renewal JSON: {JsonConvert.SerializeObject(renewRequest)}");
+                    Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
                     var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
                         .Result;
-                    return GetRenewResponse(renewResponse);
+                    Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                    return _requestManager.GetRenewResponse(renewResponse);
 
                 case RequestUtilities.EnrollmentType.Reissue:
                     Logger.Trace($"Entering Reissue Enrollment");
                     priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                     uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
+                    Logger.Trace($"Reissue uUId: {uUId}");
                     reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
                     Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
                     var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
                         .Result;
-                    return GetReIssueResult(reissueResponse);
+                    Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                    return _requestManager.GetReIssueResult(reissueResponse);
             }
-
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return null;
         }
 
-        private EnrollmentResult GetRenewResponse(RenewalResponse renewResponse)
-        {
-            if (renewResponse.RegistrationError != null)
-            {
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return new EnrollmentResult
-                {
-                    Status = 30, //failure
-                    StatusMessage = renewResponse.RegistrationError.Description
-                };
-            }
 
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return new EnrollmentResult
-            {
-                Status = 9, //success
-                StatusMessage = $"Renewal Successfully Completed For {renewResponse.Result.CommonName}"
-            };
-        }
-
-        private EnrollmentResult
-            GetEnrollmentResult(
-                IRegistrationResponse registrationResponse)
-        {
-            if (registrationResponse.RegistrationError != null)
-            {
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return new EnrollmentResult
-                {
-                    Status = 30, //failure
-                    StatusMessage = registrationResponse.RegistrationError.Description
-                };
-            }
-
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return new EnrollmentResult
-            {
-                Status = 9, //success
-                StatusMessage =
-                    $"Order Successfully Created With Order Number {registrationResponse.Result.CommonName}"
-            };
-        }
-
-        private int GetRevokeResult(IRevokeResponse revokeResponse)
-        {
-            if (revokeResponse.RegistrationError != null)
-            {
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
-            }
-
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
-        }
-
-        private EnrollmentResult GetReIssueResult(IReissueResponse reissueResponse)
-        {
-            if (reissueResponse.RegistrationError != null)
-            {
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return new EnrollmentResult
-                {
-                    Status = 30, //failure
-                    StatusMessage = reissueResponse.RegistrationError.Description
-                };
-            }
-
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return new EnrollmentResult
-            {
-                Status = 9, //success
-                StatusMessage = $"Reissue Successfully Completed For {reissueResponse.Result.CommonName}"
-            };
-        }
-
+        
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            Logger.Trace($"Entering Get Single Certificate");
+            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             var keyfactorCaId = caRequestId.Substring(38); //todo fix to use pipe delimiter
+            Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
             var certificateResponse =
                 Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(caRequestId.Substring(0, 36)))
                     .Result;
 
             Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
-
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return new CAConnectorCertificate
             {
                 CARequestID = keyfactorCaId,
@@ -312,9 +250,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
         {
+            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             CscGlobalClient = new CscGlobalClient(configProvider);
             var templateSync = configProvider.CAConnectionData["TemplateSync"].ToString();
             if (templateSync.ToUpper() == "ON") EnableTemplateSync = true;
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
         }
 
         public override void Ping()

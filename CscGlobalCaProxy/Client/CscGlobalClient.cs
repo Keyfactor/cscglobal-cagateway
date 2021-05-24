@@ -152,14 +152,12 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             try
             {
                 var itemsProcessed = 0;
-                var pageCounter = 0;
                 var isComplete = false;
                 var retryCount = 0;
                 do
                 {
-                    pageCounter++;
                     var batchItemsProcessed = 0;
-                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status==Active"))
+                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status==Active", ct))
                     {
                         if (!resp.IsSuccessStatusCode)
                         {

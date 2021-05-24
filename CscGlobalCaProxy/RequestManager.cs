@@ -5,44 +5,101 @@ using System.Text;
 using CAProxy.AnyGateway.Models;
 using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
+using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 
 namespace Keyfactor.AnyGateway.CscGlobal
 {
     public class RequestManager
     {
-        private readonly CscGlobalCaProxy _cscGlobalCaProxy;
-
-        public RequestManager(CscGlobalCaProxy cscGlobalCaProxy)
-        {
-            _cscGlobalCaProxy = cscGlobalCaProxy;
-        }
-
-
         private List<CustomField> GetCustomFields(EnrollmentProductInfo productInfo)
         {
-            var poNumber=new CustomField();
+            var poNumber = new CustomField();
             poNumber.Name = "PO Number";
             poNumber.Value = productInfo.ProductParameters["PO Number"];
-            var customFieldList=new List<CustomField>();
+            var customFieldList = new List<CustomField>();
             customFieldList.Add(poNumber);
 
             return customFieldList;
         }
 
-        public DomainControlValidation GetDomainControlValidation(string methodType,string emailAddress)
+        public EnrollmentResult GetRenewResponse(RenewalResponse renewResponse)
         {
-                return new DomainControlValidation
+            if (renewResponse.RegistrationError != null)
+                return new EnrollmentResult
                 {
-                    MethodType = methodType,
-                    EmailAddress = emailAddress
+                    Status = 30, //failure
+                    StatusMessage = renewResponse.RegistrationError.Description
                 };
+
+            return new EnrollmentResult
+            {
+                Status = 9, //success
+                StatusMessage = $"Renewal Successfully Completed For {renewResponse.Result.CommonName}"
+            };
         }
 
-        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr, Dictionary<string, string[]> sans)
+
+        public EnrollmentResult
+            GetEnrollmentResult(
+                IRegistrationResponse registrationResponse)
+        {
+            if (registrationResponse.RegistrationError != null)
+                return new EnrollmentResult
+                {
+                    Status = 30, //failure
+                    StatusMessage = registrationResponse.RegistrationError.Description
+                };
+
+            return new EnrollmentResult
+            {
+                Status = 9, //success
+                StatusMessage =
+                    $"Order Successfully Created With Order Number {registrationResponse.Result.CommonName}"
+            };
+        }
+
+        public int GetRevokeResult(IRevokeResponse revokeResponse)
+        {
+            if (revokeResponse.RegistrationError != null)
+            {
+                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
+            }
+
+            return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
+        }
+
+        public EnrollmentResult GetReIssueResult(IReissueResponse reissueResponse)
+        {
+            if (reissueResponse.RegistrationError != null)
+            {
+                return new EnrollmentResult
+                {
+                    Status = 30, //failure
+                    StatusMessage = reissueResponse.RegistrationError.Description
+                };
+            }
+
+            return new EnrollmentResult
+            {
+                Status = 9, //success
+                StatusMessage = $"Reissue Successfully Completed For {reissueResponse.Result.CommonName}"
+            };
+        }
+
+        public DomainControlValidation GetDomainControlValidation(string methodType, string emailAddress)
+        {
+            return new DomainControlValidation
+            {
+                MethodType = methodType,
+                EmailAddress = emailAddress
+            };
+        }
+
+        public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr,
+            Dictionary<string, string[]> sans)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            char[] delimiters = {' '};
             var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
@@ -57,20 +114,20 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
                 ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
-                DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
+                DomainControlValidation = GetDomainControlValidation(methodType, commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
-                ShowPrice = true,//User should not have to fill this out
+                ShowPrice = true, //User should not have to fill this out
                 CustomFields = GetCustomFields(productInfo),
-                SubjectAlternativeNames= certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
-                EvCertificateDetails = certificateType=="3"?GetEvCertificateDetails(productInfo):null
+                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
+                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
-        private string GetCertificateType(string productID)
+        private string GetCertificateType(string productId)
         {
-            switch(productID)
+            switch (productId)
             {
                 case "CscGlobal-Premium":
                     return "0";
@@ -81,6 +138,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 case "CscGlobal-Wildcard":
                     return "1";
             }
+
             return "-1";
         }
 
@@ -94,12 +152,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
-        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr, Dictionary<string, string[]> sans)
+        public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr,
+            Dictionary<string, string[]> sans)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            char[] delimiters = {' '};
-            var commonNameValidationEmail= productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
 
@@ -119,46 +177,40 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = true,
-                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
+                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
                 CustomFields = GetCustomFields(productInfo),
                 EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
-        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo,Dictionary<string, string[]> sans)
+        private List<SubjectAlternativeName> GetSubjectAlternativeNames(EnrollmentProductInfo productInfo,
+            Dictionary<string, string[]> sans)
         {
-            var subjectNameList=new List<SubjectAlternativeName>();
-            string[] emailAddresses;
+            var subjectNameList = new List<SubjectAlternativeName>();
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
 
             foreach (var k in sans.Keys)
             {
                 var san = new SubjectAlternativeName();
                 san.DomainName = sans[k][0];
-                emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
+                var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
                 if (methodType.ToUpper() == "EMAIL")
-                {
-                    foreach(var email in emailAddresses)
-                    {
+                    foreach (var email in emailAddresses)
                         san.DomainControlValidation = GetDomainControlValidation(methodType, email);
-                    }
-                }
                 else //it is a CNAME validation so no email is needed
-                {
                     san.DomainControlValidation = GetDomainControlValidation(methodType, "");
-                }
-                               
+
                 subjectNameList.Add(san);
             }
 
             return subjectNameList;
         }
 
-        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr, Dictionary<string, string[]> sans) 
+        public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr,
+            Dictionary<string, string[]> sans)
         {
             var bytes = Encoding.UTF8.GetBytes(csr);
             var encodedString = Convert.ToBase64String(bytes);
-            char[] delimiters = {' '};
             var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
@@ -174,12 +226,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 ApplicantLastName = productInfo.ProductParameters["Applicant Last Name"],
                 ApplicantEmailAddress = productInfo.ProductParameters["Applicant Email Address"],
                 ApplicantPhoneNumber = productInfo.ProductParameters["Applicant Phone (+nn.nnnnnnnn)"],
-                DomainControlValidation = GetDomainControlValidation(methodType,commonNameValidationEmail),
+                DomainControlValidation = GetDomainControlValidation(methodType, commonNameValidationEmail),
                 Notifications = GetNotifications(productInfo),
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = true,
-                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo,sans) : null,
+                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
                 CustomFields = GetCustomFields(productInfo),
                 EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
             };
