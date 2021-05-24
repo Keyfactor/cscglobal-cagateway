@@ -13,7 +13,9 @@ To begin, you must have the CA Gateway Service installed and operational before 
 ##Configuration
 It is important to note that importing the  Csc Global configuration into the CA Gateway prior to installing the binaries must be completed. Additionally, the CA Gateway service
 must be running in order to succesfully import the configuation. When the CA Gateway service starts it will attempt to validate the connection information to 
-the CA.  Without the imported configuration, the service will fail to start. 
+the CA.  Without the imported configuration, the service will fail to start.
+
+Configuration Video [here](https://web.microsoftstream.com/video/b72590d2-9c11-41bf-be01-9cd36bdafd21?list=studio).
 
 The below example configuration can be modified and saved to the CA Gateway server and imported to suite a customer's needs.
 
