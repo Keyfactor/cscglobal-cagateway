@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using CAProxy.AnyGateway.Models;
 using CSS.PKI;
@@ -61,9 +62,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public int GetRevokeResult(IRevokeResponse revokeResponse)
         {
             if (revokeResponse.RegistrationError != null)
-            {
                 return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
-            }
 
             return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
         }
@@ -71,19 +70,34 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public EnrollmentResult GetReIssueResult(IReissueResponse reissueResponse)
         {
             if (reissueResponse.RegistrationError != null)
-            {
                 return new EnrollmentResult
                 {
                     Status = 30, //failure
                     StatusMessage = reissueResponse.RegistrationError.Description
                 };
-            }
 
             return new EnrollmentResult
             {
                 Status = 9, //success
                 StatusMessage = $"Reissue Successfully Completed For {reissueResponse.Result.CommonName}"
             };
+        }
+
+        public DomainControlValidation GetDomainControlValidation(string methodType, string[] emailAddress,
+            string domainName)
+        {
+            foreach (var address in emailAddress)
+            {
+                var email = new MailAddress(address);
+                if (domainName.Contains(email.Host))
+                    return new DomainControlValidation
+                    {
+                        MethodType = methodType,
+                        EmailAddress = email.ToString()
+                    };
+            }
+
+            return null;
         }
 
         public DomainControlValidation GetDomainControlValidation(string methodType, string emailAddress)
@@ -191,12 +205,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             foreach (var k in sans.Keys)
             {
+                var domainName = sans[k][0];
                 var san = new SubjectAlternativeName();
-                san.DomainName = sans[k][0];
+                san.DomainName = domainName;
                 var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
                 if (methodType.ToUpper() == "EMAIL")
-                    foreach (var email in emailAddresses)
-                        san.DomainControlValidation = GetDomainControlValidation(methodType, email);
+                    san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
                 else //it is a CNAME validation so no email is needed
                     san.DomainControlValidation = GetDomainControlValidation(methodType, "");
 
