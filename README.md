@@ -88,7 +88,7 @@ template and how they work with the enrollment process.
 
 ### CSC Global EV Template
 
-Video(https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
+[Video](https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
 
 ## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
