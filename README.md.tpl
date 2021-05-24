@@ -87,8 +87,10 @@ There are 4 different templates used in enrollment.  There is an EV Template, Pr
 template and how they work with the enrollment process.
 
 ### CSC Global EV Template
-
 [Video](https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
+
+### CSC Global Premium Template
+[Video](https://web.microsoftstream.com/video/0ac0c3fb-ff07-4b23-ba8c-78f1361c84ee)
 
 ## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
