@@ -6,14 +6,16 @@
 <!-- add integration specific information below -->
 *** 
 # Getting Started
-##Prerequsites
+## Prerequsites
 To begin, you must have the CA Gateway Service installed and operational before attempting to configure the CSC Global plugin. Follow the installation instructions
 [here]().
 
-##Configuration
+## Configuration
 It is important to note that importing the  Csc Global configuration into the CA Gateway prior to installing the binaries must be completed. Additionally, the CA Gateway service
 must be running in order to succesfully import the configuation. When the CA Gateway service starts it will attempt to validate the connection information to 
-the CA.  Without the imported configuration, the service will fail to start. 
+the CA.  Without the imported configuration, the service will fail to start.
+
+Configuration Video [here](https://web.microsoftstream.com/video/b72590d2-9c11-41bf-be01-9cd36bdafd21?list=studio).
 
 The below example configuration can be modified and saved to the CA Gateway server and imported to suite a customer's needs.
 
@@ -80,7 +82,17 @@ The below example configuration can be modified and saved to the CA Gateway serv
 }
 ```
 
-##Install
+## Enrollment
+There are 4 different templates used in enrollment.  There is an EV Template, Premium Template, UCC Template and Wildcard Template.  Below is a short video description of each
+template and how they work with the enrollment process.
+
+### CSC Global EV Template
+[Video](https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
+
+### CSC Global Premium Template
+[Video](https://web.microsoftstream.com/video/0ac0c3fb-ff07-4b23-ba8c-78f1361c84ee)
+
+## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
 (C:\\Program Files\\Keyfactor\\Keyfactor CA Gateway by default). These files can be found in the offical release build artifacts in Github.
 
