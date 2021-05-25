@@ -89,7 +89,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             foreach (var address in emailAddress)
             {
                 var email = new MailAddress(address);
-                if (domainName.Contains(email.Host))
+                if (domainName.Contains(email.Host.Split('.')[0]))
                     return new DomainControlValidation
                     {
                         MethodType = methodType,
@@ -203,18 +203,18 @@ namespace Keyfactor.AnyGateway.CscGlobal
             var subjectNameList = new List<SubjectAlternativeName>();
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
 
-            foreach (var k in sans.Keys)
+            foreach (var v in sans["dns"])
             {
-                var domainName = sans[k][0];
-                var san = new SubjectAlternativeName();
-                san.DomainName = domainName;
-                var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
-                if (methodType.ToUpper() == "EMAIL")
-                    san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
-                else //it is a CNAME validation so no email is needed
-                    san.DomainControlValidation = GetDomainControlValidation(methodType, "");
+                    var domainName = v;
+                    var san = new SubjectAlternativeName();
+                    san.DomainName = domainName;
+                    var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
+                    if (methodType.ToUpper() == "EMAIL")
+                        san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
+                    else //it is a CNAME validation so no email is needed
+                        san.DomainControlValidation = GetDomainControlValidation(methodType, "");
 
-                subjectNameList.Add(san);
+                    subjectNameList.Add(san);
             }
 
             return subjectNameList;
