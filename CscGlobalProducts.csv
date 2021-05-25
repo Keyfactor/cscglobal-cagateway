@@ -1,5 +1,5 @@
 ﻿ProductName,Code,Vendor,Product Type,IsMultiDomain
-Csc Global Premium,CscGlobal-Premium,CSCGlobal,DV,No
-Csc Global EV,CscGlobal-EV,CSCGlobal,DV,No
-Csc Global UCC,CscGlobal-UCC,CSCGlobal,DV,No
-Csc Global Wildcard,CscGlobal-Wildcard,CSCGlobal,DV,No
+CSC TrustedSecure Premium Certificate,CSC TrustedSecure Premium Certificate,CSCGlobal,DV,No
+CSC TrustedSecure EV Certificate,CSC TrustedSecure EV Certificate,CSCGlobal,DV,No
+CSC TrustedSecure UC Certificate,CSC TrustedSecure UC Certificate,CSCGlobal,DV,Yes
+CSC TrustedSecure Premium Wildcard Certificate,CSC TrustedSecure Premium Wildcard Certificate,CSCGlobal,DV,No
