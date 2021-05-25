@@ -92,6 +92,12 @@ template and how they work with the enrollment process.
 ### CSC Global Premium Template
 [Video](https://web.microsoftstream.com/video/0ac0c3fb-ff07-4b23-ba8c-78f1361c84ee)
 
+### CSC Global Wildcard Template
+[Video](https://web.microsoftstream.com/video/d5ff6d55-36d7-4df4-b46a-dd173db91006)
+
+### CSC Global UCC (Multi-Domain) Template
+[Video](https://web.microsoftstream.com/video/807d833c-b4b6-43d8-86cc-f47b04d0eb23)
+
 ## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
 (C:\\Program Files\\Keyfactor\\Keyfactor CA Gateway by default). These files can be found in the offical release build artifacts in Github.
