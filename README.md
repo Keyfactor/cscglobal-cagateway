@@ -48,20 +48,20 @@ The below example configuration can be modified and saved to the CA Gateway serv
     "TemplateSync": "On"
   },
   "Templates": {
-    "CscGlobal-Premium": {
-      "ProductID": "CscGlobal-Premium",
+    "CSC TrustedSecure Premium Certificate": {
+      "ProductID": "CSC TrustedSecure Premium Certificate",
       "Parameters": {}
     },
-    "CscGlobal-EV": {
-      "ProductID": "CscGlobal-EV",
+    "CSC TrustedSecure EV Certificate": {
+      "ProductID": "CSC TrustedSecure EV Certificate",
       "Parameters": {}
     },
-    "CscGlobal-UCC": {
-      "ProductID": "CscGlobal-UCC",
+    "CSC TrustedSecure UC Certificate": {
+      "ProductID": "CSC TrustedSecure UC Certificate",
       "Parameters": {}
     },
-    "CscGlobal-Wildcard": {
-      "ProductID": "CscGlobal-Wildcard",
+    "CSC TrustedSecure Premium Wildcard Certificate": {
+      "ProductID": "CSC TrustedSecure Premium Wildcard Certificate",
       "Parameters": {}
     }
   },
