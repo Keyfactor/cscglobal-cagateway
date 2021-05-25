@@ -86,16 +86,16 @@ The below example configuration can be modified and saved to the CA Gateway serv
 There are 4 different templates used in enrollment.  There is an EV Template, Premium Template, UCC Template and Wildcard Template.  Below is a short video description of each
 template and how they work with the enrollment process.
 
-### CSC Global EV Template
+### CSC TrustedSecure EV Certificate
 [Video](https://web.microsoftstream.com/video/bb3db223-65ba-491d-bd8b-9d5d3fed98ff)
 
-### CSC Global Premium Template
+### CSC TrustedSecure Premium Certificate
 [Video](https://web.microsoftstream.com/video/0ac0c3fb-ff07-4b23-ba8c-78f1361c84ee)
 
-### CSC Global Wildcard Template
+### CSC TrustedSecure Premium Wildcard Certificate
 [Video](https://web.microsoftstream.com/video/d5ff6d55-36d7-4df4-b46a-dd173db91006)
 
-### CSC Global UCC (Multi-Domain) Template
+### CSC TrustedSecure UC Certificate
 [Video](https://web.microsoftstream.com/video/807d833c-b4b6-43d8-86cc-f47b04d0eb23)
 
 ## Install
