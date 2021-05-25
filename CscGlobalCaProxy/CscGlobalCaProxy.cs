@@ -33,8 +33,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
-            try
-            {
+
                 Logger.Trace($"Staring Revoke Method");
                 var revokeResponse =
                     Task.Run(async () =>
@@ -43,14 +42,19 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                 Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return _requestManager.GetRevokeResult(revokeResponse);
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"An Error has occurred during the revoke process {e.Message}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
-            }
+                
+                var revokeResult=_requestManager.GetRevokeResult(revokeResponse);
+
+                if(revokeResult== Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+                {
+                    throw new Exception("Revoke failed");
+                    return -1;
+                }
+                else
+                {
+                    return revokeResult;
+                }
+
         }
 
         [Obsolete]
@@ -195,31 +199,56 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     return _requestManager.GetEnrollmentResult(enrollmentResponse);
                 case RequestUtilities.EnrollmentType.Renew:
                     Logger.Trace($"Entering Renew Enrollment");
-                    priorCert = certificateDataReader.GetCertificateRecord(
-                        DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
-                    uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                    Logger.Trace($"Renew uUId: {uUId}");
-                    renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
-                    Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
-                    var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
-                        .Result;
-                    Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
-                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                    return _requestManager.GetRenewResponse(renewResponse);
+                    //One click won't work for this implementation b/c we are missing enrollment params
+                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name")) 
+                    {
+                        priorCert = certificateDataReader.GetCertificateRecord(
+                            DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
+                        uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
+                        Logger.Trace($"Renew uUId: {uUId}");
+                        renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
+                        Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
+                        var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
+                            .Result;
+                        Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
+                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                        return _requestManager.GetRenewResponse(renewResponse);
+                    }
+                    else
+                    {
+                        return new EnrollmentResult
+                        {
+                            Status = 30, //failure
+                            StatusMessage = "One click Renew Is Not Available for this Certificate Type.  Use the configure button instead."
+                        };
+                    }
+
 
                 case RequestUtilities.EnrollmentType.Reissue:
                     Logger.Trace($"Entering Reissue Enrollment");
-                    priorCert = certificateDataReader.GetCertificateRecord(
+                    //One click won't work for this implementation b/c we are missing enrollment params
+                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name"))
+                    {
+                        priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
-                    uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                    Logger.Trace($"Reissue uUId: {uUId}");
-                    reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
-                    Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
-                    var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
-                        .Result;
-                    Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
-                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                    return _requestManager.GetReIssueResult(reissueResponse);
+                        uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
+                        Logger.Trace($"Reissue uUId: {uUId}");
+                        reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
+                        Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
+                        var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
+                            .Result;
+                        Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
+                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                        return _requestManager.GetReIssueResult(reissueResponse);
+                    }
+                    else
+                    {
+                        return new EnrollmentResult
+                        {
+                            Status = 30, //failure
+                            StatusMessage = "One click Renew Is Not Available for this Certificate Type.  Use the configure button instead."
+                        };
+                    }
             }
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return null;
