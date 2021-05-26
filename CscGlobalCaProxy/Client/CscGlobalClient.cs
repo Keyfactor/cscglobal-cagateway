@@ -157,7 +157,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 do
                 {
                     var batchItemsProcessed = 0;
-                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status==Active", ct))
+                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status=in=(ACTIVE,REVOKED)", ct))
                     {
                         if (!resp.IsSuccessStatusCode)
                         {
