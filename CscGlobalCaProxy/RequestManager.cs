@@ -143,13 +143,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             switch (productId)
             {
-                case "CscGlobal-Premium":
+                case "CSC TrustedSecure Premium Certificate":
                     return "0";
-                case "CscGlobal-EV":
+                case "CSC TrustedSecure EV Certificate":
                     return "3";
-                case "CscGlobal-UCC":
+                case "CSC TrustedSecure UC Certificate":
                     return "2";
-                case "CscGlobal-Wildcard":
+                case "CSC TrustedSecure Premium Wildcard Certificate":
                     return "1";
             }
 
