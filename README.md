@@ -102,6 +102,9 @@ template and how they work with the enrollment process.
 The one click renew/reissue is not supported for this integration because the original enrollment fields are not available when doing the renew/reissue.
 this [Video](https://web.microsoftstream.com/video/bc3ec09e-f4a9-4c5b-9233-20f5b28b4456)
 
+## Revoke
+[Video](https://web.microsoftstream.com/video/1d170a6c-cbbc-4be7-8c46-8ee060dd02f1)
+
 ## Install
 Once the CA Gateway configuration has been imported, the binaries need to be placed in the Keyfactor CA Gateway Service install directory 
 (C:\\Program Files\\Keyfactor\\Keyfactor CA Gateway by default). These files can be found in the offical release build artifacts in Github.
