@@ -7,7 +7,7 @@ Csc Global operates a PKI as a service platform for customers around the globe. 
 *** 
 # Getting Started
 ## Prerequsites
-To begin, you must have the CA Gateway Service installed and operational before attempting to configure the CSC Global plugin. Follow the installation instructions
+To begin, you must have the CA Gateway Service 20.9.0 and Keyfactor Command 8.7.0.0 installed and operational before attempting to configure the CSC Global plugin. Follow the installation instructions
 [here]().
 
 ## Configuration
