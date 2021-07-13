@@ -70,6 +70,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
             CancellationToken cancelToken)
         {
+            Logger.Trace($"Full Sync? {certificateAuthoritySyncInfo.DoFullSync}");
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
