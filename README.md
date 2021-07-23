@@ -78,7 +78,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Binary Installation
 
-1) Get the Latest Zip File from [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/releases/download/v1.0.0-beta.0/CSCGlobal-AnyGateway.zip)
+1) Get the Latest Zip File from [Here](https://github.com/Keyfactor/CscGlobal-AnyGateway/releases)
 2) Gateway Server - Copy the CscGlobalCaProxy.dll to the location where the Gateway Framework was installed (usually C:\Program Files\Keyfactor\Keyfactor AnyGateway)
 
 ### Configuration Changes
