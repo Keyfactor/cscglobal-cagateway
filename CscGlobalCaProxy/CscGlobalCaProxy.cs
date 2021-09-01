@@ -47,7 +47,6 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                 if(revokeResult== Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
                 {
-                    throw new Exception("Revoke failed");
                     return -1;
                 }
                 else
@@ -101,15 +100,10 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             var fileContent =
                                 Encoding.ASCII.GetString(
                                     Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
-                            var fileContent2 =
-                                Encoding.UTF8.GetString(
-                                    Convert.FromBase64String(fileContent)); //Double base64 Encoded for some reason
 
-                            Logger.Trace($"Certificate Content: {fileContent2}");
-
-                            if (fileContent2.Length > 0)
+                            if (fileContent.Length > 0)
                             {
-                                var certData = fileContent2.Replace("\r\n", string.Empty);
+                                var certData = fileContent.Replace("\r\n", string.Empty);
                                 var splitCerts =
                                     certData.Split(new[] {"-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----"},
                                         StringSplitOptions.RemoveEmptyEntries);
