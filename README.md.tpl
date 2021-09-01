@@ -5,7 +5,7 @@
 To begin, you must have the CA Gateway Service 21.3.2 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 8.7.0.0.
 To install the gateway follow these instructions.
 
-1) Gateway Server - run the installation .msi located [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/raw/main/AnyGateway-21.3.2.msi)
+1) Gateway Server - run the installation .msi located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/AnyGateway-21.3.2.msi)
 
 2) Gateway Server - If you have the rights to install the database (usually in a Non SQL PAAS Environment) Using Powershell, run the following command to create the gateway database.
 
@@ -78,7 +78,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Binary Installation
 
-1) Get the Latest Zip File from [Here](https://github.com/Keyfactor/CscGlobal-AnyGateway/releases)
+1) Get the Latest Zip File from [Here](https://github.com/Keyfactor/cscglobal-cagateway/releases)
 2) Gateway Server - Copy the CscGlobalCaProxy.dll to the location where the Gateway Framework was installed (usually C:\Program Files\Keyfactor\Keyfactor AnyGateway)
 
 ### Configuration Changes
@@ -86,11 +86,11 @@ the CA.  Without the imported configuration, the service will fail to start.
    ```
    <alias alias="CAConnector" type="Keyfactor.AnyGateway.CscGlobal.CscGlobalCaProxy, CscGlobalCaProxy"/>
    ```
-2) Gateway Server - Install the Root CSC Global Certificate that was received from CSC Global [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/raw/main/AAACertificateServices.crt)
+2) Gateway Server - Install the Root CSC Global Certificate that was received from CSC Global [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/AAACertificateServices.crt)
 
-3) Gateway Server - Install the Intermediate CSC Global Certificate that was received from CSC Global [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/raw/main/TrustedSecureCertificateAuthority5.crt)
+3) Gateway Server - Install the Intermediate CSC Global Certificate that was received from CSC Global [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/TrustedSecureCertificateAuthority5.crt)
 
-4) Gateway Server - Take the sample Config.json located [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/raw/main/SampleConfig.json) and make the following modifications
+4) Gateway Server - Take the sample Config.json located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/SampleConfig.json) and make the following modifications
 
 - *Security Settings Modifications* (Swap this out for the typical Gateway Security Settings for Test or Prod)
 
@@ -182,7 +182,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Template Installation
 
-1) Command Server - Copy and Unzip the Template Setup Files located [Here](https://github.com/Keyfactor/CSCGlobal-AnyGateway/raw/main/TemplateSetup.zip)
+1) Command Server - Copy and Unzip the Template Setup Files located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/TemplateSetup.zip)
 2) Command Server - Change the Security Settings in the CaTemplateUserSecurity.csv file to the appropriate settings for Test or Production
 3) Command Server - Run the CreateTemplate.ps1 file and choose option 1 to create the templates in active directory.
    *Note if you get errors the security is likely wrong and you will have to add the security manually according to Keyfactor standards* 
