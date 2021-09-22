@@ -3,11 +3,8 @@
 
 {{ description }}
 
-<<<<<<< HEAD
 ## {{ status | capitalize }} READY
 
-=======
->>>>>>> 6746a1e034ad3a8d2604c6f00bc2dc0e6ee4bdba
 <!-- add integration specific information below -->
 *** 
 # Getting Started
