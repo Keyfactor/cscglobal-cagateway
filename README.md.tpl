@@ -3,7 +3,7 @@
 
 {{ description }}
 
-## {{ status | capitalize }} READY
+## Integration status: {{ status | capitalize }}
 
 <!-- add integration specific information below -->
 *** 
