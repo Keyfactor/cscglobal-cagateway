@@ -1,11 +1,15 @@
 # CSC Global
-## Ca-gateway
 
 Csc Global operates a PKI as a service platform for customers around the globe.  The AnyGateway solution for CscGlobal is designed to allow Keyfactor Command the ability to: - Sync certificates issued from the CA - Request new certificates from the CA - Revoke certificates directly from Keyfactor Command
 
-## Integration status: Production
+#### Integration status: 
 
-<!-- add integration specific information below -->
+## About the Keyfactor 
+
+
+
+---
+
 *** 
 # Getting Started
 ## Standard Gateway Installation
