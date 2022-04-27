@@ -4,11 +4,12 @@ Csc Global operates a PKI as a service platform for customers around the globe. 
 
 #### Integration status: 
 
-## About the Keyfactor 
+## About the Keyfactor AnyGateway CA Connector
 
-
+This repository contains an AnyGateway CA Connector, which is a plugin to the Keyfactor AnyGateway. AnyGateway CA Connectors allow Keyfactor Command to be used for inventory, issuance, and revocation of certificates from a third-party certificate authority.
 
 ---
+## integration_type = ca-gateway
 
 *** 
 # Getting Started
@@ -213,3 +214,6 @@ Set-KeyfactorGatewayConfig -LogicalName "CSCGlobal" -FilePath [path to json file
 
 ### License
 [Apache](https://apache.org/licenses/LICENSE-2.0)
+
+
+
