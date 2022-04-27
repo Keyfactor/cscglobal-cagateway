@@ -1,11 +1,3 @@
-# {{ name }}
-## {{ integration_type | capitalize }}
-
-{{ description }}
-
-## Integration status: {{ status | capitalize }}
-
-<!-- add integration specific information below -->
 *** 
 # Getting Started
 ## Standard Gateway Installation
