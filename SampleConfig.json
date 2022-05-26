@@ -21,8 +21,8 @@
   },
   "CAConnection": {
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
-    "ApiKey": "SALDJDSFKLDFS",
-    "BearerToken": "ASDLKFSALDKSDALK",
+    "ApiKey": "SomeApiKeyFromCsc",
+    "BearerToken": "SomePasswordFromCsc",
     "TemplateSync": "On"
   },
   "Templates": {
