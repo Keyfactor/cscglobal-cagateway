@@ -1,4 +1,5 @@
-﻿Function ImportWindowsCATemplates($CSVFile,$SecurityCSV)
+#Install Templates PS
+Function ImportWindowsCATemplates($CSVFile,$SecurityCSV)
 {
     Import-Csv $CSVFile | ForEach-Object {
 
