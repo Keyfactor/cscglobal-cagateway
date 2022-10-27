@@ -34,14 +34,14 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
 
-                Logger.Trace($"Staring Revoke Method");
+                EventLogger.Trace($"Staring Revoke Method");
                 var revokeResponse =
                     Task.Run(async () =>
                             await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0,36)))
                         .Result; //todo fix to use pipe delimiter
 
-                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                EventLogger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
+                EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 
                 var revokeResult=_requestManager.GetRevokeResult(revokeResponse);
 
@@ -69,8 +69,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
             CancellationToken cancelToken)
         {
-            Logger.Trace($"Full Sync? {certificateAuthoritySyncInfo.DoFullSync}");
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.Trace($"Full Sync? {certificateAuthoritySyncInfo.DoFullSync}");
+            EventLogger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
                 var certs = new BlockingCollection<ICertificateResponse>(100);
@@ -80,13 +80,13 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
-                        Logger.Error("Synchronize was canceled.");
+                        EventLogger.Error("Synchronize was canceled.");
                         break;
                     }
 
                     try
                     {
-                        Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
+                        EventLogger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
                         var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
 
                         //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
@@ -110,7 +110,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                 foreach (var cert in splitCerts)
                                     if (!cert.Contains(".crt"))
                                     {
-                                        Logger.Trace($"Split Cert Value: {cert}");
+                                        EventLogger.Trace($"Split Cert Value: {cert}");
 
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
                                         if (!currentCert.Subject.Contains("AAA Certificate Services") &&
@@ -134,20 +134,20 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     }
                     catch (OperationCanceledException)
                     {
-                        Logger.Error("Synchronize was canceled.");
+                        EventLogger.Error("Synchronize was canceled.");
                         break;
                     }
                 }
             }
             catch (AggregateException aggEx)
             {
-                Logger.Error("Csc Global Synchronize Task failed!");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                EventLogger.Error("Csc Global Synchronize Task failed!");
+                EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 // ReSharper disable once PossibleIntendedRethrow
                 throw aggEx;
             }
 
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
         }
 
         [Obsolete]
@@ -162,7 +162,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             string subject, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo,
             PKIConstants.X509.RequestFormat requestFormat, RequestUtilities.EnrollmentType enrollmentType)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
 
             RegistrationRequest enrollmentRequest;
             CAConnectorCertificate priorCert;
@@ -173,17 +173,17 @@ namespace Keyfactor.AnyGateway.CscGlobal
             switch (enrollmentType)
             {
                 case RequestUtilities.EnrollmentType.New:
-                    Logger.Trace($"Entering New Enrollment");
+                    EventLogger.Trace($"Entering New Enrollment");
                     //If they renewed an expired cert it gets here and this will not be supported
                     IRegistrationResponse enrollmentResponse;
                     if (!productInfo.ProductParameters.ContainsKey("PriorCertSN"))
                     {
                         enrollmentRequest = _requestManager.GetRegistrationRequest(productInfo, csr, san);
-                        Logger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
+                        EventLogger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
                         enrollmentResponse =
                             Task.Run(async () => await CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest))
                                 .Result;
-                        Logger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
+                        EventLogger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
                     }
                     else
                     {
@@ -193,23 +193,23 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             StatusMessage = "You cannot renew and expired cert please perform an new enrollment."
                         };
                     }
-                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                    EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                     return _requestManager.GetEnrollmentResult(enrollmentResponse);
                 case RequestUtilities.EnrollmentType.Renew:
-                    Logger.Trace($"Entering Renew Enrollment");
+                    EventLogger.Trace($"Entering Renew Enrollment");
                     //One click won't work for this implementation b/c we are missing enrollment params
                     if (productInfo.ProductParameters.ContainsKey("Applicant Last Name")) 
                     {
                         priorCert = certificateDataReader.GetCertificateRecord(
                             DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                         uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                        Logger.Trace($"Renew uUId: {uUId}");
+                        EventLogger.Trace($"Renew uUId: {uUId}");
                         renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
-                        Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
+                        EventLogger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
                         var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
                             .Result;
-                        Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
-                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                        EventLogger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
+                        EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                         return _requestManager.GetRenewResponse(renewResponse);
                     }
                     else
@@ -223,20 +223,20 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
 
                 case RequestUtilities.EnrollmentType.Reissue:
-                    Logger.Trace($"Entering Reissue Enrollment");
+                    EventLogger.Trace($"Entering Reissue Enrollment");
                     //One click won't work for this implementation b/c we are missing enrollment params
                     if (productInfo.ProductParameters.ContainsKey("Applicant Last Name"))
                     {
                         priorCert = certificateDataReader.GetCertificateRecord(
                         DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
                         uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                        Logger.Trace($"Reissue uUId: {uUId}");
+                        EventLogger.Trace($"Reissue uUId: {uUId}");
                         reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
-                        Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
+                        EventLogger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
                         var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
                             .Result;
-                        Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
-                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                        EventLogger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
+                        EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                         return _requestManager.GetReIssueResult(reissueResponse);
                     }
                     else
@@ -248,22 +248,22 @@ namespace Keyfactor.AnyGateway.CscGlobal
                         };
                     }
             }
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return null;
         }
         
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             var keyfactorCaId = caRequestId.Substring(0, 36); //todo fix to use pipe delimiter
-            Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
+            EventLogger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
             var certificateResponse =
                 Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
                     .Result;
 
-            Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
+            EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return new CAConnectorCertificate
             {
                 CARequestID = keyfactorCaId,
@@ -275,11 +275,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             CscGlobalClient = new CscGlobalClient(configProvider);
             var templateSync = configProvider.CAConnectionData["TemplateSync"].ToString();
             if (templateSync.ToUpper() == "ON") EnableTemplateSync = true;
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
         }
 
         public override void Ping()

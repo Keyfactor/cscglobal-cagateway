@@ -40,7 +40,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/registration", new StringContent(
                 JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
             {
-                Logger.Trace(JsonConvert.SerializeObject(registerRequest));
+                EventLogger.Trace(JsonConvert.SerializeObject(registerRequest));
                 var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
@@ -66,7 +66,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             using (var resp = await RestClient.PostAsync("/tls/renewal", new StringContent(
                 JsonConvert.SerializeObject(renewalRequest), Encoding.ASCII, "application/json")))
             {
-                Logger.Trace(JsonConvert.SerializeObject(renewalRequest));
+                EventLogger.Trace(JsonConvert.SerializeObject(renewalRequest));
 
                 var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
@@ -92,7 +92,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/reissue", new StringContent(
                 JsonConvert.SerializeObject(reissueRequest), Encoding.ASCII, "application/json")))
             {
-                Logger.Trace(JsonConvert.SerializeObject(reissueRequest));
+                EventLogger.Trace(JsonConvert.SerializeObject(reissueRequest));
 
                 var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
@@ -148,7 +148,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         public async Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc,
             CancellationToken ct)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
                 var itemsProcessed = 0;
@@ -162,7 +162,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                         if (!resp.IsSuccessStatusCode)
                         {
                             var responseMessage = resp.Content.ReadAsStringAsync().Result;
-                            Logger.Error(
+                            EventLogger.Error(
                                 $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
                             retryCount++;
                             if (retryCount > 5)
@@ -179,21 +179,21 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
                         var batchCount = batchResponse.Results.Count;
 
-                        Logger.Trace($"Processing {batchCount} items in batch");
+                        EventLogger.Trace($"Processing {batchCount} items in batch");
                         do
                         {
                             var r = batchResponse.Results[batchItemsProcessed];
                             if (bc.TryAdd(r, 10, ct))
                             {
-                                Logger.Trace($"Added Template ID {r.Uuid} to Queue for processing");
+                                EventLogger.Trace($"Added Template ID {r.Uuid} to Queue for processing");
                                 batchItemsProcessed++;
                                 itemsProcessed++;
-                                Logger.Trace($"Processed {batchItemsProcessed} of {batchCount}");
-                                Logger.Trace($"Total Items Processed: {itemsProcessed}");
+                                EventLogger.Trace($"Processed {batchItemsProcessed} of {batchCount}");
+                                EventLogger.Trace($"Total Items Processed: {itemsProcessed}");
                             }
                             else
                             {
-                                Logger.Trace($"Adding {r} blocked. Retry");
+                                EventLogger.Trace($"Adding {r} blocked. Retry");
                             }
                         } while (batchItemsProcessed < batchCount); //batch loop
                     }
@@ -207,24 +207,24 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
             catch (OperationCanceledException cancelEx)
             {
-                Logger.Warn($"Synchronize method was cancelled. Message: {cancelEx.Message}");
+                EventLogger.Warn($"Synchronize method was cancelled. Message: {cancelEx.Message}");
                 bc.CompleteAdding();
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
                 // ReSharper disable once PossibleIntendedRethrow
                 throw cancelEx;
             }
             catch (RetryCountExceededException retryEx)
             {
-                Logger.Error($"Retries Failed: {retryEx.Message}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                EventLogger.Error($"Retries Failed: {retryEx.Message}");
+                EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             }
             catch (HttpRequestException ex)
             {
-                Logger.Error($"HttpRequest Failed: {ex.Message}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                EventLogger.Error($"HttpRequest Failed: {ex.Message}");
+                EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             }
 
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            EventLogger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
         }
 
         private HttpClient ConfigureRestClient()
