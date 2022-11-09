@@ -180,6 +180,9 @@ the CA.  Without the imported configuration, the service will fail to start.
 5) Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
 
 ### Template Installation
+
+**PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION**
+
 1) **Create ADFS Certificate Templates for the Following Products**
 - CSC TrustedSecure Premium Certificate
 - CSC TrustedSecure EV Certificate
