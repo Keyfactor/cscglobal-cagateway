@@ -194,18 +194,17 @@ the CA.  Without the imported configuration, the service will fail to start.
 5) Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
 
 ### Template Installation
-**Create ADFS Certificate Templates for the Following Products**
+1)**Create ADFS Certificate Templates for the Following Products**
 - CSC TrustedSecure Premium Certificate
 - CSC TrustedSecure EV Certificate
 - CSC TrustedSecure UC Certificate
 - CSC TrustedSecure Premium Wildcard Certificate
 
-**Import Into Keyfactor using the template import functionality**
+2)**Import Into Keyfactor using the template import functionality**
 
-**Edit each template and modify the Details and Enrollment Fields as Follows**
+3)**Edit each template and modify the Details and Enrollment Fields as Follows**
 	
-**CSC TrustedSecure UC Certificate**
-**Details Tab**
+**CSC TrustedSecure UC Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -217,10 +216,23 @@ Enforce RFC 2818 Compliance | True
 CSR Enrollment | True
 Pfx Enrollment | True
 
-**Enrollment Fields**
 
+**CSC TrustedSecure UC Certificate - Enrollment Fields**
 
-
+NAME | DATA TYPE	| VALUES
+-----|--------------|-----------------
+Term | Multiple Choice | 12
+Applicant First Name | String | N/A
+Applicant Last Name | String | N/A
+Applicant Email Address | String | N/A
+Applicant Phone (+nn.nnnnnnnn) | String | N/A
+Domain Control Validation Method | Multiple Choice | EMAIL
+Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+Business Unit | Multiple Choice | Get From CSC Differs For Clients
+Notification Email(s) Comma Separated | String | N/A
+CN DCV Email (admin@yourdomain.com) | String | N/A
+Addtl Sans Comma Separated DVC Emails | String | N/A
+	
 	
 
 ### Certificate Authority Installation
