@@ -120,15 +120,6 @@ the CA.  Without the imported configuration, the service will fail to start.
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
     "ApiKey": "SALDJDSFKLDFS",
     "BearerToken": "ASDLKFSALDKSDALK",
-    "FromEmailAddress":"noReply@keyfactor.com",
-    "CscGlobalEmail":"ServiceNowEmail@ServiceNow.com",
-    "KeyfactorApiUserId":"SomeUserForKFAPI",
-    "KeyfactorApiPassword":"SomePasswordForKFApi",
-    "KeyfactorApiUrl":"https://kftrain.keyfactor.lab/KeyfactorAPI",
-    "SmtpEmailHost":"smtp.mailgun.org",
-    "EmailUserId":"SomeSTMPServiceUserId",
-    "EmailPassword":"SomeSMTPServicePassword",
-    "EmailPort":"587",
     "TemplateSync": "On"
   }
 ```
