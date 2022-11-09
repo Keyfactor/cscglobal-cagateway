@@ -195,10 +195,10 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Template Installation
 **Create ADFS Certificate Templates for the Following Products**
-	-CSC TrustedSecure Premium Certificate
-	-CSC TrustedSecure EV Certificate
-	-CSC TrustedSecure UC Certificate
-	-CSC TrustedSecure Premium Wildcard Certificate
+	- CSC TrustedSecure Premium Certificate
+	- CSC TrustedSecure EV Certificate
+	- CSC TrustedSecure UC Certificate
+	- CSC TrustedSecure Premium Wildcard Certificate
 
 **Import Into Keyfactor using the template import functionality**
 
