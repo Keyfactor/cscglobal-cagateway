@@ -195,10 +195,10 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Template Installation
 **Create ADFS Certificate Templates for the Following Products**
-	1) CSC TrustedSecure Premium Certificate
-	2) CSC TrustedSecure EV Certificate
-	3) CSC TrustedSecure UC Certificate
-	4) CSC TrustedSecure Premium Wildcard Certificate
+	1. CSC TrustedSecure Premium Certificate
+	2. CSC TrustedSecure EV Certificate
+	3. CSC TrustedSecure UC Certificate
+	4. CSC TrustedSecure Premium Wildcard Certificate
 
 **Import Into Keyfactor using the template import functionality**
 
@@ -206,6 +206,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 	
 	**CSC TrustedSecure UC Certificate**
 	**Details Tab**
+	
 	CONFIG ELEMENT				| DESCRIPTION
 	----------------------------|------------------
 	Template Short Name	| CSC TrustedSecure Premium Certificate
@@ -217,6 +218,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 	Pfx Enrollment | True
 	
 	**Enrollment Fields**
+	
 	NAME | DATA TYPE	| VALUES
 	-----|--------------|-----------------
 	Term | Multiple Choice | 12,24,36,48,60,72
