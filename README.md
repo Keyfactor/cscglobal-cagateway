@@ -206,6 +206,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 ####Edit each template and modify the Details and Enrollment Fields as Follows
 	#####CSC TrustedSecure UC Certificate
 	######Details Tab
+	
 	CONFIG ELEMENT				| DESCRIPTION
 	----------------------------|------------------
 	Template Short Name	| CSC TrustedSecure Premium Certificate
@@ -217,8 +218,9 @@ the CA.  Without the imported configuration, the service will fail to start.
 	Pfx Enrollment | True
 	
 	######Enrollment Fields
-	NAME				| DATA TYPE	| VALUES
-	----------------------------|------------------|-----------------
+	
+	NAME | DATA TYPE	| VALUES
+	-----|--------------|-----------------
 	Term | Multiple Choice | 12,24,36,48,60,72
 	Applicant First Name | String | N/A
 	Applicant Last Name | String | N/A
