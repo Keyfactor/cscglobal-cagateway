@@ -180,14 +180,45 @@ the CA.  Without the imported configuration, the service will fail to start.
 5) Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
 
 ### Template Installation
+1) Create ADFS Certificate Templates for the Following Products 
+	*CSC TrustedSecure Premium Certificate
+	*CSC TrustedSecure EV Certificate
+	*CSC TrustedSecure UC Certificate
+	*CSC TrustedSecure Premium Wildcard Certificate
 
-1) Command Server - Copy and Unzip the Template Setup Files located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/TemplateSetup.zip)
-2) Command Server - Change the Security Settings in the CaTemplateUserSecurity.csv file to the appropriate settings for Test or Production
-3) Command Server - Run the CreateTemplate.ps1 file and choose option 1 to create the templates in active directory.
-   *Note if you get errors the security is likely wrong and you will have to add the security manually according to Keyfactor standards* 
-4) Command Server - Use the Keyfactor Portal to Import the Templates created in Active Directory in step #3 above
-5) Command Server - Run the CreateTemplate.ps1 file and choose option 3 to create all the enrollment fields.  
-   *Note You will have to override the default API Questions to the appropriate information.*
+2) Import Into Keyfactor using the template import functionality
+
+
+3) Edit each template and modify the Details and Enrollment Fields as Follows
+	####CSC TrustedSecure UC Certificate
+	#####Details Tab
+	CONFIG ELEMENT				| DESCRIPTION
+	----------------------------|------------------
+	Template Short Name	| CSC TrustedSecure Premium Certificate
+	Template Display Name	| CSC TrustedSecure Premium Certificate
+	Friendly Name	| CSC TrustedSecure Premium Certificate
+	Keys Size  | 2048
+	Enforce RFC 2818 Compliance | True
+	CSR Enrollment | True
+	Pfx Enrollment | True
+	
+	#####Enrollment Fields
+	NAME				| DATA TYPE	| VALUES
+	----------------------------|------------------
+	Term | Multiple Choice | 12,24,36,48,60,72
+	Applicant First Name | String | N/A
+	Applicant Last Name | String | N/A
+	Applicant Email Address | String | N/A
+	Applicant Phone (+nn.nnnnnnnn) | String | N/A
+	Domain Control Validation Method | Multiple Choice | EMAIL
+	Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+	Business Unit | Multiple Choice | Get From CSC Differs For Clients
+	Notification Email(s) Comma Separated | String | N/A
+	CN DCV Email (admin@yourdomain.com) | String | N/A
+	Addtl Sans Comma Separated DVC Emails | String | N/A
+	
+	
+	
 
 ### Certificate Authority Installation
 1) Gateway Server - Start the Keyfactor Gateway Service
