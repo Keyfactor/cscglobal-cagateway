@@ -194,17 +194,17 @@ the CA.  Without the imported configuration, the service will fail to start.
 5) Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
 
 ### Template Installation
-1)**Create ADFS Certificate Templates for the Following Products**
+1) **Create ADFS Certificate Templates for the Following Products**
 - CSC TrustedSecure Premium Certificate
 - CSC TrustedSecure EV Certificate
 - CSC TrustedSecure UC Certificate
 - CSC TrustedSecure Premium Wildcard Certificate
 
-2)**Import Into Keyfactor using the template import functionality**
+2) **Import Into Keyfactor using the template import functionality**
 
-3)**Edit each template and modify the Details and Enrollment Fields as Follows**
+3) **Edit each template and modify the Details and Enrollment Fields as Follows**
 	
-**CSC TrustedSecure UC Certificate - Details Tab**
+*CSC TrustedSecure UC Certificate - Details Tab*
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -217,11 +217,11 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-**CSC TrustedSecure UC Certificate - Enrollment Fields**
+*CSC TrustedSecure UC Certificate - Enrollment Fields*
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
-Term | Multiple Choice | 12
+Term | Multiple Choice | 12,24
 Applicant First Name | String | N/A
 Applicant Last Name | String | N/A
 Applicant Email Address | String | N/A
