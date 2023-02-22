@@ -8,7 +8,9 @@ Csc Global operates a PKI as a service platform for customers around the globe. 
 
 This repository contains an AnyGateway CA Connector, which is a plugin to the Keyfactor AnyGateway. AnyGateway CA Connectors allow Keyfactor Command to be used for inventory, issuance, and revocation of certificates from a third-party certificate authority.
 
----
+
+
+
 
 *** 
 # Getting Started
@@ -132,15 +134,6 @@ the CA.  Without the imported configuration, the service will fail to start.
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
     "ApiKey": "SALDJDSFKLDFS",
     "BearerToken": "ASDLKFSALDKSDALK",
-    "FromEmailAddress":"noReply@keyfactor.com",
-    "CscGlobalEmail":"ServiceNowEmail@ServiceNow.com",
-    "KeyfactorApiUserId":"SomeUserForKFAPI",
-    "KeyfactorApiPassword":"SomePasswordForKFApi",
-    "KeyfactorApiUrl":"https://kftrain.keyfactor.lab/KeyfactorAPI",
-    "SmtpEmailHost":"smtp.mailgun.org",
-    "EmailUserId":"SomeSTMPServiceUserId",
-    "EmailPassword":"SomeSMTPServicePassword",
-    "EmailPort":"587",
     "TemplateSync": "On"
   }
 ```
@@ -193,13 +186,132 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 ### Template Installation
 
-1) Command Server - Copy and Unzip the Template Setup Files located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/TemplateSetup.zip)
-2) Command Server - Change the Security Settings in the CaTemplateUserSecurity.csv file to the appropriate settings for Test or Production
-3) Command Server - Run the CreateTemplate.ps1 file and choose option 1 to create the templates in active directory.
-   *Note if you get errors the security is likely wrong and you will have to add the security manually according to Keyfactor standards* 
-4) Command Server - Use the Keyfactor Portal to Import the Templates created in Active Directory in step #3 above
-5) Command Server - Run the CreateTemplate.ps1 file and choose option 3 to create all the enrollment fields.  
-   *Note You will have to override the default API Questions to the appropriate information.*
+**PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION**
+
+1) **Create ADFS Certificate Templates for the Following Products**
+- CSC TrustedSecure Premium Certificate
+- CSC TrustedSecure EV Certificate
+- CSC TrustedSecure UC Certificate
+- CSC TrustedSecure Premium Wildcard Certificate
+
+2) **Import Into Keyfactor using the template import functionality**
+
+3) **Edit each template and modify the Details and Enrollment Fields as Follows**
+	
+*CSC TrustedSecure UC Certificate - Details Tab*
+
+CONFIG ELEMENT				| DESCRIPTION
+----------------------------|------------------
+Template Short Name	| CSC TrustedSecure Premium Certificate
+Template Display Name	| CSC TrustedSecure Premium Certificate
+Friendly Name	| CSC TrustedSecure Premium Certificate
+Keys Size  | 2048
+Enforce RFC 2818 Compliance | True
+CSR Enrollment | True
+Pfx Enrollment | True
+
+
+*CSC TrustedSecure UC Certificate - Enrollment Fields*
+
+NAME | DATA TYPE	| VALUES
+-----|--------------|-----------------
+Term | Multiple Choice | 12,24
+Applicant First Name | String | N/A
+Applicant Last Name | String | N/A
+Applicant Email Address | String | N/A
+Applicant Phone (+nn.nnnnnnnn) | String | N/A
+Domain Control Validation Method | Multiple Choice | EMAIL
+Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+Business Unit | Multiple Choice | Get From CSC Differs For Clients
+Notification Email(s) Comma Separated | String | N/A
+CN DCV Email (admin@yourdomain.com) | String | N/A
+Addtl Sans Comma Separated DVC Emails | String | N/A
+	
+*CSC TrustedSecure EV Certificate - Details Tab*
+
+CONFIG ELEMENT				| DESCRIPTION
+----------------------------|------------------
+Template Short Name	| CSC TrustedSecure EV Certificate
+Template Display Name	| CSC TrustedSecure EV Certificate
+Friendly Name	| CSC TrustedSecure EV Certificate
+Keys Size  | 2048
+Enforce RFC 2818 Compliance | True
+CSR Enrollment | True
+Pfx Enrollment | True
+
+
+*CSC TrustedSecure EV Certificate - Enrollment Fields*
+
+NAME | DATA TYPE	| VALUES
+-----|--------------|-----------------
+Term | Multiple Choice | 12,24
+Applicant First Name | String | N/A
+Applicant Last Name | String | N/A
+Applicant Email Address | String | N/A
+Applicant Phone (+nn.nnnnnnnn) | String | N/A
+Domain Control Validation Method | Multiple Choice | EMAIL
+Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+Business Unit | Multiple Choice | Get From CSC Differs For Clients
+Notification Email(s) Comma Separated | String | N/A
+CN DCV Email (admin@yourdomain.com) | String | N/A
+Organization Country | String | N/A
+
+*CSC TrustedSecure Premium Certificate - Details Tab*
+
+CONFIG ELEMENT				| DESCRIPTION
+----------------------------|------------------
+Template Short Name	| CSC TrustedSecure Premium Certificate
+Template Display Name	| CSC TrustedSecure Premium Certificate
+Friendly Name	| CSC TrustedSecure Premium Certificate
+Keys Size  | 2048
+Enforce RFC 2818 Compliance | True
+CSR Enrollment | True
+Pfx Enrollment | True
+
+
+*CSC TrustedSecure Premium Certificate - Enrollment Fields*
+
+NAME | DATA TYPE	| VALUES
+-----|--------------|-----------------
+Term | Multiple Choice | 12,24
+Applicant First Name | String | N/A
+Applicant Last Name | String | N/A
+Applicant Email Address | String | N/A
+Applicant Phone (+nn.nnnnnnnn) | String | N/A
+Domain Control Validation Method | Multiple Choice | EMAIL
+Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+Business Unit | Multiple Choice | Get From CSC Differs For Clients
+Notification Email(s) Comma Separated | String | N/A
+CN DCV Email (admin@yourdomain.com) | String | N/A
+
+*CSC TrustedSecure Premium Wildcard Certificate - Details Tab*
+
+CONFIG ELEMENT				| DESCRIPTION
+----------------------------|------------------
+Template Short Name	| CSC TrustedSecure Premium Wildcard Certificate
+Template Display Name	| CSC TrustedSecure Premium Wildcard Certificate
+Friendly Name	| CSC TrustedSecure Premium Wildcard Certificate
+Keys Size  | 2048
+Enforce RFC 2818 Compliance | True
+CSR Enrollment | True
+Pfx Enrollment | True
+
+
+*CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields*
+
+NAME | DATA TYPE	| VALUES
+-----|--------------|-----------------
+Term | Multiple Choice | 12,24
+Applicant First Name | String | N/A
+Applicant Last Name | String | N/A
+Applicant Email Address | String | N/A
+Applicant Phone (+nn.nnnnnnnn) | String | N/A
+Domain Control Validation Method | Multiple Choice | EMAIL
+Organization Contact | Multiple Choice | Get From CSC Differs For Clients
+Business Unit | Multiple Choice | Get From CSC Differs For Clients
+Notification Email(s) Comma Separated | String | N/A
+CN DCV Email (admin@yourdomain.com) | String | N/A
+
 
 ### Certificate Authority Installation
 1) Gateway Server - Start the Keyfactor Gateway Service
