@@ -1,2 +1,3 @@
+v1.0.9
 - Updated Readme to go from Powershell based install to Manual Install With More Detailed Instructions
 - Removed unneeded config items
