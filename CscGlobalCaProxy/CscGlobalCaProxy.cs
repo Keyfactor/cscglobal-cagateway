@@ -120,7 +120,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                             !currentCert.Subject.Contains("Trusted Secure Certificate Authority DV"))
                                             blockingBuffer.Add(new CAConnectorCertificate
                                             {
-                                                CARequestID =$"{currentResponseItem?.Uuid}-{currentCert.SerialNumber}",
+                                                CARequestID =$"{currentResponseItem?.Uuid}",
                                                 Certificate = cert,
                                                 SubmissionDate = currentResponseItem?.OrderDate == null
                                                     ? Convert.ToDateTime(currentCert.NotBefore)
