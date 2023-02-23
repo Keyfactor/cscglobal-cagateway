@@ -313,7 +313,9 @@ Set-KeyfactorGatewayConfig -LogicalName "CSCGlobal" -FilePath [path to json file
 ### Meta Data Fix Patch for Version 1.0.9 Steps
 1) Stop the CSC Global Gateway Service
 2) Run the following SQL In your CSC Global Gateway Database
+
 ```Delete Certificates WHERE LEN("CARequestId") <> 36```
+
 3) Copy the New CSCGlobal v1.0.9 or later Binaries to the Gateway Directory Typically “c:\Progam Files\Keyfactor\Keyfactor AnyGateway” on the Gateway Server
 4) Start the Gateway service and wait for the next sync between the GW Database and Keyfactor
 
