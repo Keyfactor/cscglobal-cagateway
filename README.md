@@ -15,6 +15,7 @@ This repository contains an AnyGateway CA Connector, which is a plugin to the Ke
 *** 
 # Getting Started
 ## Standard Gateway Installation
+
 To begin, you must have the CA Gateway Service 21.3.2 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 8.7.0.0.
 To install the gateway follow these instructions.
 
@@ -322,6 +323,13 @@ Set-KeyfactorGatewayConfig -LogicalName "CSCGlobal" -FilePath [path to json file
 3) Command Server - Import the certificate authority in Keyfactor Portal 
 
 ***
+
+### Meta Data Fix Patch for Version 1.0.9 Steps
+1) Stop the CSC Global Gateway Service
+2) Run the following SQL In your CSC Global Gateway Database
+```Delete Certificates WHERE LEN("CARequestId") <> 36```
+3) Copy the New CSCGlobal v1.0.9 or later Binaries to the Gateway Directory Typically “c:\Progam Files\Keyfactor\Keyfactor AnyGateway” on the Gateway Server
+4) Start the Gateway service and wait for the next sync between the GW Database and Keyfactor
 
 ### License
 [Apache](https://apache.org/licenses/LICENSE-2.0)
