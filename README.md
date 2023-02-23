@@ -326,7 +326,7 @@ Set-KeyfactorGatewayConfig -LogicalName "CSCGlobal" -FilePath [path to json file
 
 ### Meta Data Fix Patch for Version 1.0.9 Steps
 1) Stop the CSC Global Gateway Service
-2) Run the following SQL In your CSC Global Gateway Database
+2) Run the following SQL In your CSC Global Gateway Database <br/>
 
 ```Delete Certificates WHERE LEN("CARequestId") <> 36```
 
