@@ -30,7 +30,6 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
         private Uri BaseUrl { get; }
         private HttpClient RestClient { get; }
-        private int PageSize { get; } = 100;
         private string ApiKey { get; }
         private string Authorization { get; }
 
@@ -41,7 +40,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(registerRequest));
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -68,7 +67,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             {
                 Logger.Trace(JsonConvert.SerializeObject(renewalRequest));
 
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -94,7 +93,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             {
                 Logger.Trace(JsonConvert.SerializeObject(reissueRequest));
 
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -127,7 +126,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         {
             using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}", new StringContent("")))
             {
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -154,54 +153,46 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 var itemsProcessed = 0;
                 var isComplete = false;
                 var retryCount = 0;
-                do
+                var batchItemsProcessed = 0;
+                using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status=in=(ACTIVE,REVOKED)", ct))
                 {
-                    var batchItemsProcessed = 0;
-                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status=in=(ACTIVE,REVOKED)", ct))
+                    if (!resp.IsSuccessStatusCode)
                     {
-                        if (!resp.IsSuccessStatusCode)
-                        {
-                            var responseMessage = resp.Content.ReadAsStringAsync().Result;
-                            Logger.Error(
-                                $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
-                            retryCount++;
-                            if (retryCount > 5)
-                                throw new RetryCountExceededException(
-                                    $"5 consecutive failures to {resp.RequestMessage.RequestUri}");
-
-                            continue;
-                        }
-
-                        var stringResponse = await resp.Content.ReadAsStringAsync();
-
-                        var batchResponse =
-                            JsonConvert.DeserializeObject<CertificateListResponse>(stringResponse);
-
-                        var batchCount = batchResponse.Results.Count;
-
-                        Logger.Trace($"Processing {batchCount} items in batch");
-                        do
-                        {
-                            var r = batchResponse.Results[batchItemsProcessed];
-                            if (bc.TryAdd(r, 10, ct))
-                            {
-                                Logger.Trace($"Added Template ID {r.Uuid} to Queue for processing");
-                                batchItemsProcessed++;
-                                itemsProcessed++;
-                                Logger.Trace($"Processed {batchItemsProcessed} of {batchCount}");
-                                Logger.Trace($"Total Items Processed: {itemsProcessed}");
-                            }
-                            else
-                            {
-                                Logger.Trace($"Adding {r} blocked. Retry");
-                            }
-                        } while (batchItemsProcessed < batchCount); //batch loop
+                        var responseMessage = resp.Content.ReadAsStringAsync().Result;
+                        Logger.Error(
+                            $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
+                        retryCount++;
+                        if (retryCount > 5)
+                            throw new RetryCountExceededException(
+                                $"5 consecutive failures to {resp.RequestMessage.RequestUri}");
                     }
 
-                    //assume that if we process less records than requested that we have reached the end of the certificate list
-                    if (batchItemsProcessed < PageSize)
-                        isComplete = true;
-                } while (!isComplete); //page loop
+                    var stringResponse = await resp.Content.ReadAsStringAsync();
+
+                    var batchResponse =
+                        JsonConvert.DeserializeObject<CertificateListResponse>(stringResponse);
+
+                    var batchCount = batchResponse.Results.Count;
+
+                    Logger.Trace($"Processing {batchCount} items in batch");
+                    do
+                    {
+                        var r = batchResponse.Results[batchItemsProcessed];
+                        if (bc.TryAdd(r, 10, ct))
+                        {
+                            Logger.Trace($"Added Template ID {r.Uuid} to Queue for processing");
+                            batchItemsProcessed++;
+                            itemsProcessed++;
+                            Logger.Trace($"Processed {batchItemsProcessed} of {batchCount}");
+                            Logger.Trace($"Total Items Processed: {itemsProcessed}");
+                        }
+                        else
+                        {
+                            Logger.Trace($"Adding {r} blocked. Retry");
+                        }
+                    } while (batchItemsProcessed < batchCount); //batch loop
+                }
+
 
                 bc.CompleteAdding();
             }
@@ -230,7 +221,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         private HttpClient ConfigureRestClient()
         {
             var clientHandler = new WebRequestHandler();
-            var returnClient = new HttpClient(clientHandler, true) {BaseAddress = BaseUrl};
+            var returnClient = new HttpClient(clientHandler, true) { BaseAddress = BaseUrl };
             returnClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             returnClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Authorization);
             returnClient.DefaultRequestHeaders.Add("apikey", ApiKey);
