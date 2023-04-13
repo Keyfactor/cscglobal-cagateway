@@ -119,9 +119,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                     }
                             }
                         }
-
-                        blockingBuffer.CompleteAdding();
                     }
+                    blockingBuffer.CompleteAdding();
                 }
             }
             catch (Exception e)
