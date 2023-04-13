@@ -18,7 +18,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
 
         Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId);
 
-        Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc, CancellationToken ct);
+        Task<CertificateListResponse> SubmitCertificateListRequestAsync();
 
         Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId);
     }

@@ -3,3 +3,5 @@ v1.0.9
 - Removed unneeded config items
 - Fixed Meta Data Sync Issue
 - For Patch Installation for V1.0.9, see bottom of Readme File
+v1.0.10
+-Sync Issue where Sync only works after service restart fixed
