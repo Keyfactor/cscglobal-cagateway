@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using CAProxy.AnyGateway.Interfaces;
 using CSS.Common.Logging;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
-using Keyfactor.AnyGateway.CscGlobal.Exceptions;
 using Keyfactor.AnyGateway.CscGlobal.Interfaces;
 using Newtonsoft.Json;
 
@@ -30,7 +27,6 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
 
         private Uri BaseUrl { get; }
         private HttpClient RestClient { get; }
-        private int PageSize { get; } = 100;
         private string ApiKey { get; }
         private string Authorization { get; }
 
@@ -41,7 +37,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 JsonConvert.SerializeObject(registerRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(registerRequest));
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -68,7 +64,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             {
                 Logger.Trace(JsonConvert.SerializeObject(renewalRequest));
 
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -94,7 +90,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             {
                 Logger.Trace(JsonConvert.SerializeObject(reissueRequest));
 
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -127,7 +123,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         {
             using (var resp = await RestClient.PutAsync($"/dbs/api/v2/tls/revoke/{uuId}", new StringContent("")))
             {
-                var settings = new JsonSerializerSettings {NullValueHandling = NullValueHandling.Ignore};
+                var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
                     var errorResponse =
@@ -145,92 +141,27 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             }
         }
 
-        public async Task SubmitCertificateListRequestAsync(BlockingCollection<ICertificateResponse> bc,
-            CancellationToken ct)
+        public async Task<CertificateListResponse> SubmitCertificateListRequestAsync()
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            try
+            var resp = RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status=in=(ACTIVE,REVOKED)").Result;
+
+            if (!resp.IsSuccessStatusCode)
             {
-                var itemsProcessed = 0;
-                var isComplete = false;
-                var retryCount = 0;
-                do
-                {
-                    var batchItemsProcessed = 0;
-                    using (var resp = await RestClient.GetAsync("/dbs/api/v2/tls/certificate?filter=status=in=(ACTIVE,REVOKED)", ct))
-                    {
-                        if (!resp.IsSuccessStatusCode)
-                        {
-                            var responseMessage = resp.Content.ReadAsStringAsync().Result;
-                            Logger.Error(
-                                $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
-                            retryCount++;
-                            if (retryCount > 5)
-                                throw new RetryCountExceededException(
-                                    $"5 consecutive failures to {resp.RequestMessage.RequestUri}");
-
-                            continue;
-                        }
-
-                        var stringResponse = await resp.Content.ReadAsStringAsync();
-
-                        var batchResponse =
-                            JsonConvert.DeserializeObject<CertificateListResponse>(stringResponse);
-
-                        var batchCount = batchResponse.Results.Count;
-
-                        Logger.Trace($"Processing {batchCount} items in batch");
-                        do
-                        {
-                            var r = batchResponse.Results[batchItemsProcessed];
-                            if (bc.TryAdd(r, 10, ct))
-                            {
-                                Logger.Trace($"Added Template ID {r.Uuid} to Queue for processing");
-                                batchItemsProcessed++;
-                                itemsProcessed++;
-                                Logger.Trace($"Processed {batchItemsProcessed} of {batchCount}");
-                                Logger.Trace($"Total Items Processed: {itemsProcessed}");
-                            }
-                            else
-                            {
-                                Logger.Trace($"Adding {r} blocked. Retry");
-                            }
-                        } while (batchItemsProcessed < batchCount); //batch loop
-                    }
-
-                    //assume that if we process less records than requested that we have reached the end of the certificate list
-                    if (batchItemsProcessed < PageSize)
-                        isComplete = true;
-                } while (!isComplete); //page loop
-
-                bc.CompleteAdding();
-            }
-            catch (OperationCanceledException cancelEx)
-            {
-                Logger.Warn($"Synchronize method was cancelled. Message: {cancelEx.Message}");
-                bc.CompleteAdding();
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                // ReSharper disable once PossibleIntendedRethrow
-                throw cancelEx;
-            }
-            catch (RetryCountExceededException retryEx)
-            {
-                Logger.Error($"Retries Failed: {retryEx.Message}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            }
-            catch (HttpRequestException ex)
-            {
-                Logger.Error($"HttpRequest Failed: {ex.Message}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                var responseMessage = resp.Content.ReadAsStringAsync().Result;
+                Logger.Error(
+                    $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
             }
 
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            var certificateListResponse =
+                JsonConvert.DeserializeObject<CertificateListResponse>(await resp.Content.ReadAsStringAsync());
+            return certificateListResponse;
         }
 
         private HttpClient ConfigureRestClient()
         {
             var clientHandler = new WebRequestHandler();
-            var returnClient = new HttpClient(clientHandler, true) {BaseAddress = BaseUrl};
+            var returnClient = new HttpClient(clientHandler, true) { BaseAddress = BaseUrl };
             returnClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             returnClient.DefaultRequestHeaders.Add("Authorization", "Bearer " + Authorization);
             returnClient.DefaultRequestHeaders.Add("apikey", ApiKey);
