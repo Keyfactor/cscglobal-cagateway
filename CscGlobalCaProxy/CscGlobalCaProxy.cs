@@ -49,10 +49,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
             {
                 return -1;
             }
-            else
-            {
-                return revokeResult;
-            }
+
+            return revokeResult;
 
         }
 
@@ -75,79 +73,63 @@ namespace Keyfactor.AnyGateway.CscGlobal
             {
                 if (certificateAuthoritySyncInfo.DoFullSync)
                 {
-                    var certs = new BlockingCollection<ICertificateResponse>(100);
-                    CscGlobalClient.SubmitCertificateListRequestAsync(certs, cancelToken);
+                    var certs = Task.Run(async () => await CscGlobalClient.SubmitCertificateListRequestAsync()).Result;
 
-                    foreach (var currentResponseItem in certs.GetConsumingEnumerable(cancelToken))
+                    foreach (var currentResponseItem in certs.Results)
                     {
-                        if (cancelToken.IsCancellationRequested)
-                        {
-                            Logger.Error("Synchronize was canceled.");
-                            break;
-                        }
 
-                        try
-                        {
-                            Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
-                            var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
+                        cancelToken.ThrowIfCancellationRequested();
+                        Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
+                        var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
 
-                            //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
-                            if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
-                                certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
+                        //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
+                        if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
+                            certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
+                        {
+                            //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
+                            var productId = "CscGlobal";
+                            if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+
+                            var fileContent =
+                                Encoding.ASCII.GetString(
+                                    Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
+
+                            if (fileContent.Length > 0)
                             {
-                                //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
-                                var productId = "CscGlobal";
-                                if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+                                var certData = fileContent.Replace("\r\n", string.Empty);
+                                var splitCerts =
+                                    certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" },
+                                        StringSplitOptions.RemoveEmptyEntries);
+                                foreach (var cert in splitCerts)
+                                    if (!cert.Contains(".crt"))
+                                    {
+                                        Logger.Trace($"Split Cert Value: {cert}");
 
-                                var fileContent =
-                                    Encoding.ASCII.GetString(
-                                        Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
-
-                                if (fileContent.Length > 0)
-                                {
-                                    var certData = fileContent.Replace("\r\n", string.Empty);
-                                    var splitCerts =
-                                        certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" },
-                                            StringSplitOptions.RemoveEmptyEntries);
-                                    foreach (var cert in splitCerts)
-                                        if (!cert.Contains(".crt"))
+                                        var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
+                                        blockingBuffer.Add(new CAConnectorCertificate
                                         {
-                                            Logger.Trace($"Split Cert Value: {cert}");
-
-                                            var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                            if (!currentCert.Subject.Contains("AAA Certificate Services") &&
-                                                !currentCert.Subject.Contains("USERTrust RSA Certification Authority") &&
-                                                !currentCert.Subject.Contains("Trusted Secure Certificate Authority 5") &&
-                                                !currentCert.Subject.Contains("AddTrust External CA Root") &&
-                                                !currentCert.Subject.Contains("Trusted Secure Certificate Authority DV"))
-                                                blockingBuffer.Add(new CAConnectorCertificate
-                                                {
-                                                    CARequestID = $"{currentResponseItem?.Uuid}",
-                                                    Certificate = cert,
-                                                    SubmissionDate = currentResponseItem?.OrderDate == null
-                                                        ? Convert.ToDateTime(currentCert.NotBefore)
-                                                        : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                                    Status = certStatus,
-                                                    ProductID = productId
-                                                }, cancelToken);
-                                        }
-                                }
+                                            CARequestID = $"{currentResponseItem?.Uuid}",
+                                            Certificate = cert,
+                                            SubmissionDate = currentResponseItem?.OrderDate == null
+                                                ? Convert.ToDateTime(currentCert.NotBefore)
+                                                : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                            Status = certStatus,
+                                            ProductID = productId
+                                        }, cancelToken);
+                                    }
                             }
                         }
-                        catch (OperationCanceledException)
-                        {
-                            Logger.Error("Synchronize was canceled.");
-                            break;
-                        }
+
+                        blockingBuffer.CompleteAdding();
                     }
                 }
             }
-            catch (AggregateException aggEx)
+            catch (Exception e)
             {
-                Logger.Error("Csc Global Synchronize Task failed!");
+                Logger.Error($"Csc Global Synchronize Task failed! {LogHandler.FlattenException(e)}");
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                // ReSharper disable once PossibleIntendedRethrow
-                throw aggEx;
+                blockingBuffer.CompleteAdding();
+                throw;
             }
 
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
