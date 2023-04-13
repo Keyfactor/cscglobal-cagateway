@@ -212,7 +212,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 
 3) **Edit each template and modify the Details and Enrollment Fields as Follows**
 
-*CSC TrustedSecure Premium Certificate - Details Tab*
+**CSC TrustedSecure Premium Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -225,7 +225,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure Premium Certificate - Enrollment Fields*
+**CSC TrustedSecure Premium Certificate - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -240,7 +240,7 @@ Business Unit | Multiple Choice | Get From CSC Differs For Clients
 Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 
-*CSC TrustedSecure EV Certificate - Details Tab*
+**CSC TrustedSecure EV Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -253,7 +253,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure EV Certificate - Enrollment Fields*
+**CSC TrustedSecure EV Certificate - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -269,7 +269,7 @@ Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 Organization Country | String | N/A
 
-*CSC TrustedSecure UC Certificate - Details Tab*
+**CSC TrustedSecure UC Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -282,7 +282,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure UC Certificate - Enrollment Fields*
+**CSC TrustedSecure UC Certificate - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -299,7 +299,7 @@ CN DCV Email (admin@yourdomain.com) | String | N/A
 Addtl Sans Comma Separated DVC Emails | String | N/A
 	
 
-*CSC TrustedSecure Premium Wildcard Certificate - Details Tab*
+**CSC TrustedSecure Premium Wildcard Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -312,7 +312,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields*
+**CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -327,7 +327,7 @@ Business Unit | Multiple Choice | Get From CSC Differs For Clients
 Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 
-*CSC TrustedSecure Domain Validated SSL - Details Tab*
+**CSC TrustedSecure Domain Validated SSL - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -340,7 +340,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure Domain Validated SSL - Enrollment Fields*
+**CSC TrustedSecure Domain Validated SSL - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -355,7 +355,7 @@ Business Unit | Multiple Choice | Get From CSC Differs For Clients
 Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 
-*CSC TrustedSecure Domain Validated Wildcard SSL - Details Tab*
+**CSC TrustedSecure Domain Validated Wildcard SSL - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -368,7 +368,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure Domain Validated Wildcard SSL - Enrollment Fields*
+**CSC TrustedSecure Domain Validated Wildcard SSL - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
@@ -383,7 +383,7 @@ Business Unit | Multiple Choice | Get From CSC Differs For Clients
 Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 
-*CSC TrustedSecure Domain Validated UC Certificate - Details Tab*
+**CSC TrustedSecure Domain Validated UC Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -396,7 +396,7 @@ CSR Enrollment | True
 Pfx Enrollment | True
 
 
-*CSC TrustedSecure Domain Validated UC Certificate - Enrollment Fields*
+**CSC TrustedSecure Domain Validated UC Certificate - Enrollment Fields**
 
 NAME | DATA TYPE	| VALUES
 -----|--------------|-----------------
