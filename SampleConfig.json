@@ -41,6 +41,18 @@
     "CSC TrustedSecure Premium Wildcard Certificate": {
       "ProductID": "CSC TrustedSecure Premium Wildcard Certificate",
       "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated SSL": {
+      "ProductID": "CSC TrustedSecure Domain Validated SSL",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated Wildcard SSL": {
+      "ProductID": "CSC TrustedSecure Domain Validated Wildcard SSL",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated UC Certificate": {
+      "ProductID": "CSC TrustedSecure Domain Validated UC Certificate",
+      "Parameters": {}
     }
   },
   "CertificateManagers": null,
