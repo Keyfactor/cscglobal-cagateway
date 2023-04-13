@@ -1,0 +1,68 @@
+{
+  "Id": "4a1c47cb-ac6e-4f86-a2be-335c51f7a943",
+  "DisplayName": "Enroll Params Based on Domain",
+  "Description": "Takes enrollment params from the user interface and dynamically changes the values based on a given domain.",
+  "Key": "40",
+  "KeyDisplayName": "CSC TrustedSecure Premium Certificate",
+  "IsPublished": true,
+  "WorkflowType": "Enrollment",
+  "Steps": [
+    {
+      "Id": "86e6b9ac-3d6c-4e4c-9fbe-2fb466702be2",
+      "DisplayName": "End-NOOP",
+      "UniqueName": "EndNOOP",
+      "ExtensionName": "NOOPStep",
+      "Enabled": true,
+      "ConfigurationParameters": {},
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "KeyfactorEnroll"
+      }
+    },
+    {
+      "Id": "bbf2c70b-5a77-499b-a537-3aba1cc06db3",
+      "DisplayName": "Keyfactor-Enroll",
+      "UniqueName": "KeyfactorEnroll",
+      "ExtensionName": "EnrollStep",
+      "Enabled": true,
+      "ConfigurationParameters": {},
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {}
+    },
+    {
+      "Id": "62e94406-4f6d-45b5-aef8-40b47b2e8e17",
+      "DisplayName": "Modify Params",
+      "UniqueName": "PowerShell1",
+      "ExtensionName": "PowerShell",
+      "Enabled": true,
+      "ConfigurationParameters": {
+        "ScriptParameters": {
+          "SubjectCN": "$(request:cn)"
+        },
+        "ScriptContent": "# Declare your parameters at the beginning\nparam(\n[string]$AdditionalAttributes,\n[string]$SubjectCN\n)\n\n\n# Initialize a hashtable\n$UpdatedAttributes = @{}\n\n# Load original attributes in UpdatedAttributes for the else case\n$UpdatedAttributes['Term'] = '12'\n$UpdatedAttributes['Applicant First Name'] = $SubjectCN\n$UpdatedAttributes['Applicant Last Name'] = 'Smith'\n$UpdatedAttributes['Applicant Email Address'] = 'admin@boingy.com'\n$UpdatedAttributes['Applicant Phone (+nn.nnnnnnnn)'] = '+12.12345678'\n$UpdatedAttributes['Domain Control Validation Method'] = 'EMAIL'\n$UpdatedAttributes['Organization Contact'] = 'Keyfactor Primary'\n$UpdatedAttributes['Business Unit'] = 'Keyfactor API'\n$UpdatedAttributes['Notification Email(s) Comma Separated'] = 'admin@boingy.com'\n$UpdatedAttributes['CN DCV Email (admin@yourdomain.com)'] = 'admin@boingy.com'\n\n# If the value of Department is \"Accounting\", then the value of Code must be \"G5N145\"; override submitted value--if any--and use fixed value\nif($SubjectCN.Contains(\"boingy.com\")) {\n   $UpdatedAttributes['Applicant Last Name'] = \"Watson\"\n}\n\n# Return the updated attributes to the workflow in the original parameter as a hashtable\n$result = @{ \"AdditionalAttributes\" = $UpdatedAttributes }\nreturn $result"
+      },
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "EndNOOP"
+      }
+    },
+    {
+      "Id": "2c04139b-8996-462e-b9c5-410721c950bb",
+      "DisplayName": "Start-NOOP",
+      "UniqueName": "StartNOOP",
+      "ExtensionName": "NOOPStep",
+      "Enabled": true,
+      "ConfigurationParameters": {},
+      "Signals": [],
+      "Conditions": [],
+      "Outputs": {
+        "continue": "PowerShell1"
+      }
+    }
+  ],
+  "DraftVersion": 11,
+  "PublishedVersion": 11
+}
