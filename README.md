@@ -139,7 +139,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 ```
 
 **Template Settings**
-- For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached [workflow 1](https://github.com/Keyfactor/cscglobal-cagateway/blob/4c84a353cc9c3b0bf2514b2aca26de40936fb3fb/Workflow%201%20-%20Modify%20Enrollment%20Params.json).
+- For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
 ```
   "Templates": {
     "CSC TrustedSecure Premium Certificate": {
