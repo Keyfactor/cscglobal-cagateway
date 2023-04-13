@@ -34,25 +34,23 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
 
-                Logger.Trace($"Staring Revoke Method");
-                var revokeResponse =
-                    Task.Run(async () =>
-                            await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0,36)))
-                        .Result; //todo fix to use pipe delimiter
+            Logger.Trace($"Staring Revoke Method");
+            var revokeResponse =
+                Task.Run(async () =>
+                        await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
+                    .Result; //todo fix to use pipe delimiter
 
-                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                
-                var revokeResult=_requestManager.GetRevokeResult(revokeResponse);
+            Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
+            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
 
-                if(revokeResult== Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
-                {
-                    return -1;
-                }
-                else
-                {
-                    return revokeResult;
-                }
+            var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
+
+            if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+            {
+                return -1;
+            }
+
+            return revokeResult;
 
         }
 
@@ -73,19 +71,14 @@ namespace Keyfactor.AnyGateway.CscGlobal
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
-                var certs = new BlockingCollection<ICertificateResponse>(100);
-                CscGlobalClient.SubmitCertificateListRequestAsync(certs, cancelToken);
-
-                foreach (var currentResponseItem in certs.GetConsumingEnumerable(cancelToken))
+                if (certificateAuthoritySyncInfo.DoFullSync)
                 {
-                    if (cancelToken.IsCancellationRequested)
-                    {
-                        Logger.Error("Synchronize was canceled.");
-                        break;
-                    }
+                    var certs = Task.Run(async () => await CscGlobalClient.SubmitCertificateListRequestAsync()).Result;
 
-                    try
+                    foreach (var currentResponseItem in certs.Results)
                     {
+
+                        cancelToken.ThrowIfCancellationRequested();
                         Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
                         var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
 
@@ -105,7 +98,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                             {
                                 var certData = fileContent.Replace("\r\n", string.Empty);
                                 var splitCerts =
-                                    certData.Split(new[] {"-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----"},
+                                    certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" },
                                         StringSplitOptions.RemoveEmptyEntries);
                                 foreach (var cert in splitCerts)
                                     if (!cert.Contains(".crt"))
@@ -113,38 +106,30 @@ namespace Keyfactor.AnyGateway.CscGlobal
                                         Logger.Trace($"Split Cert Value: {cert}");
 
                                         var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        if (!currentCert.Subject.Contains("AAA Certificate Services") &&
-                                            !currentCert.Subject.Contains("USERTrust RSA Certification Authority") &&
-                                            !currentCert.Subject.Contains("Trusted Secure Certificate Authority 5") && 
-                                            !currentCert.Subject.Contains("AddTrust External CA Root") &&
-                                            !currentCert.Subject.Contains("Trusted Secure Certificate Authority DV"))
-                                            blockingBuffer.Add(new CAConnectorCertificate
-                                            {
-                                                CARequestID =$"{currentResponseItem?.Uuid}",
-                                                Certificate = cert,
-                                                SubmissionDate = currentResponseItem?.OrderDate == null
-                                                    ? Convert.ToDateTime(currentCert.NotBefore)
-                                                    : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                                Status = certStatus,
-                                                ProductID = productId
-                                            }, cancelToken);
+                                        blockingBuffer.Add(new CAConnectorCertificate
+                                        {
+                                            CARequestID = $"{currentResponseItem?.Uuid}",
+                                            Certificate = cert,
+                                            SubmissionDate = currentResponseItem?.OrderDate == null
+                                                ? Convert.ToDateTime(currentCert.NotBefore)
+                                                : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                            Status = certStatus,
+                                            ProductID = productId
+                                        }, cancelToken);
                                     }
                             }
                         }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Logger.Error("Synchronize was canceled.");
-                        break;
+
+                        blockingBuffer.CompleteAdding();
                     }
                 }
             }
-            catch (AggregateException aggEx)
+            catch (Exception e)
             {
-                Logger.Error("Csc Global Synchronize Task failed!");
+                Logger.Error($"Csc Global Synchronize Task failed! {LogHandler.FlattenException(e)}");
                 Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                // ReSharper disable once PossibleIntendedRethrow
-                throw aggEx;
+                blockingBuffer.CompleteAdding();
+                throw;
             }
 
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
@@ -198,7 +183,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 case RequestUtilities.EnrollmentType.Renew:
                     Logger.Trace($"Entering Renew Enrollment");
                     //One click won't work for this implementation b/c we are missing enrollment params
-                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name")) 
+                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name"))
                     {
                         priorCert = certificateDataReader.GetCertificateRecord(
                             DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
@@ -251,7 +236,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return null;
         }
-        
+
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
