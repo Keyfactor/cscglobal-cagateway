@@ -139,6 +139,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 ```
 
 - *Template Settings*
+- For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
 ```
   "Templates": {
     "CSC TrustedSecure Premium Certificate": {
@@ -156,6 +157,30 @@ the CA.  Without the imported configuration, the service will fail to start.
     "CSC TrustedSecure Premium Wildcard Certificate": {
       "ProductID": "CSC TrustedSecure Premium Wildcard Certificate",
       "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated SSL": {
+      "ProductID": "CSC TrustedSecure Domain Validated SSL",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated Wildcard SSL": {
+      "ProductID": "CSC TrustedSecure Domain Validated Wildcard SSL",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure Domain Validated UC Certificate": {
+      "ProductID": "CSC TrustedSecure Domain Validated UC Certificate",
+	"Parameters": {
+		"Term": "12",
+		"Applicant First Name": "Joe",
+		"Applicant Last Name": "Smiht",
+		"Applicant Email Address": "admin@jsmith.com",
+		"Applicant Phone (+nn.nnnnnnnn)": "+12.34567890",
+		"Domain Control Validation Method": "EMAIL",
+		"Organization Contact": "Some Contact",
+		"Business Unit": "Some Business Unit",
+		"Notification Email(s) Comma Separated": "admin@jsmith.com",
+		"CN DCV Email (admin@yourdomain.com)": "admin@jsmith.com",
+		"Addtl Sans Comma Separated DVC Emails": "admin@jsmith.com"
+	}
     }
   }
 ```

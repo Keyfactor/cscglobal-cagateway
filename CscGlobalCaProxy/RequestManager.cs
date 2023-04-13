@@ -150,6 +150,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     return "2";
                 case "CSC TrustedSecure Premium Wildcard Certificate":
                     return "1";
+                case "CSC TrustedSecure Domain Validated SSL":
+                    return "4";
+                case "CSC TrustedSecure Domain Validated Wildcard SSL":
+                    return "5";
+                case "CSC TrustedSecure Domain Validated UC Certificate":
+                    return "6";
             }
 
             return "-1";
@@ -204,16 +210,16 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             foreach (var v in sans["dns"])
             {
-                    var domainName = v;
-                    var san = new SubjectAlternativeName();
-                    san.DomainName = domainName;
-                    var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
-                    if (methodType.ToUpper() == "EMAIL")
-                        san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
-                    else //it is a CNAME validation so no email is needed
-                        san.DomainControlValidation = GetDomainControlValidation(methodType, "");
+                var domainName = v;
+                var san = new SubjectAlternativeName();
+                san.DomainName = domainName;
+                var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
+                if (methodType.ToUpper() == "EMAIL")
+                    san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
+                else //it is a CNAME validation so no email is needed
+                    san.DomainControlValidation = GetDomainControlValidation(methodType, "");
 
-                    subjectNameList.Add(san);
+                subjectNameList.Add(san);
             }
 
             return subjectNameList;
