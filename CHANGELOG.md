@@ -3,3 +3,9 @@ v1.0.9
 - Removed unneeded config items
 - Fixed Meta Data Sync Issue
 - For Patch Installation for V1.0.9, see bottom of Readme File
+v1.0.10
+- Sync Issue where Sync only works after service restart fixed
+- Sync Fix when errors occur in the CSC Api so next sync works
+- Support for CSC TrustedSecure Domain Validated SSL (new CSC Template)
+- Support for CSC TrustedSecure Domain Validated Wildcard SSL (new CSC Template)
+- Support for CSC TrustedSecure Domain Validated UC Certificate (new CSC Template)
