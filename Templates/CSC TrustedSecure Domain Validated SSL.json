@@ -1,0 +1,106 @@
+{
+  "Id": 999999,
+  "CommonName": "CscGlobalDV-SSL",
+  "TemplateName": "CscGlobalDV-SSL",
+  "Oid": "Replace OID",
+  "KeySize": "2048",
+  "KeyType": "RSA",
+  "ForestRoot": "keyfactor.lab",
+  "FriendlyName": "Replace Friendly Name",
+  "KeyRetention": "AfterExpiration",
+  "KeyRetentionDays": 55,
+  "KeyArchival": false,
+  "EnrollmentFields": [
+    {
+      "Id": 6760440,
+      "Name": "Term",
+      "Options": [
+        "12",
+		"24",
+		"36",
+		"48",
+		"60",
+		"72"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 6760441,
+      "Name": "Applicant First Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 6760442,
+      "Name": "Applicant Last Name",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 6760443,
+      "Name": "Applicant Email Address",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 6760444,
+      "Name": "Applicant Phone (+nn.nnnnnnnn)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 6760450,
+      "Name": "Domain Control Validation Method",
+      "Options": [
+        	"EMAIL",
+		"CNAME"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 6760460,
+      "Name": "CN DCV Email (admin@yourdomain.com)",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    },
+    {
+      "Id": 6760470,
+      "Name": "Organization Contact",
+      "Options": [
+        	"Some Organization"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 6760471,
+      "Name": "Business Unit",
+      "Options": [
+        	"Cert API Testing"
+      ],
+      "DataType": 2
+    },
+    {
+      "Id": 6760480,
+      "Name": "Notification Email(s) Comma Separated",
+      "Options": [
+        ""
+      ],
+      "DataType": 1
+    }
+  ],
+  "AllowedEnrollmentTypes": 7,
+  "TemplateRegexes": [],
+  "UseAllowedRequesters": false,
+  "AllowedRequesters": [],
+  "DisplayName": "Replace Display Name"
+}
