@@ -3,3 +3,6 @@ CSC TrustedSecure Premium Certificate,CSC TrustedSecure Premium Certificate,CSCG
 CSC TrustedSecure EV Certificate,CSC TrustedSecure EV Certificate,CSCGlobal,DV,No
 CSC TrustedSecure UC Certificate,CSC TrustedSecure UC Certificate,CSCGlobal,DV,Yes
 CSC TrustedSecure Premium Wildcard Certificate,CSC TrustedSecure Premium Wildcard Certificate,CSCGlobal,DV,No
+CSC TrustedSecure Domain Validated UC Certificate,CSC TrustedSecure Domain Validated UC Certificate,CSCGlobal,DV,Yes
+CSC TrustedSecure Domain Validated Wildcard SSL,CSC TrustedSecure Domain Validated Wildcard SSL,CSCGlobal,DV,No
+CSC TrustedSecure Domain Validated SSL,CSC TrustedSecure Domain Validated SSL,CSCGlobal,DV,No
