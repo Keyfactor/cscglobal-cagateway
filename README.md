@@ -238,8 +238,7 @@ the CA.  Without the imported configuration, the service will fail to start.
 2) **Import Into Keyfactor using the template import functionality**
 
 3) **Edit each template and modify the Details and Enrollment Fields as Follows**
-
-**CSC TrustedSecure Premium Certificate - Details Tab**
+*CSC TrustedSecure Premium Certificate - Details Tab**
 
 CONFIG ELEMENT				| DESCRIPTION
 ----------------------------|------------------
@@ -438,6 +437,7 @@ Business Unit | Multiple Choice | Get From CSC Differs For Clients
 Notification Email(s) Comma Separated | String | N/A
 CN DCV Email (admin@yourdomain.com) | String | N/A
 Addtl Sans Comma Separated DVC Emails | String | N/A
+
 
 ### Certificate Authority Installation
 1) Gateway Server - Start the Keyfactor Gateway Service
