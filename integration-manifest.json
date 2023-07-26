@@ -2,7 +2,8 @@
     "$schema": "https://keyfactor.github.io/integration-manifest-schema.json",
     "integration_type": "ca-gateway",
     "name": "CSC Global",
-    "status": "Production",
+    "status": "production",
     "description": "Csc Global operates a PKI as a service platform for customers around the globe.  The AnyGateway solution for CscGlobal is designed to allow Keyfactor Command the ability to: - Sync certificates issued from the CA - Request new certificates from the CA - Revoke certificates directly from Keyfactor Command",
-    "link_github": true
+    "link_github": true,
+    "update_catalog": true
 }
