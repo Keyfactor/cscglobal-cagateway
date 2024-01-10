@@ -108,10 +108,20 @@ namespace Keyfactor.AnyGateway.CscGlobal
             };
         }
 
+
+        public static Func<string, string> Pemify = ss =>
+        ss.Length <= 64 ? ss : ss.Substring(0, 64) + "\n" + Pemify(ss.Substring(64));
+
         public RegistrationRequest GetRegistrationRequest(EnrollmentProductInfo productInfo, string csr,
             Dictionary<string, string[]> sans)
         {
-            var bytes = Encoding.UTF8.GetBytes(csr);
+
+            var cert = "-----BEGIN CERTIFICATE REQUEST-----\r\n";
+            cert = cert + Pemify(csr);
+            cert = cert + "\r\n-----END CERTIFICATE REQUEST-----";
+
+
+            var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
             var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
@@ -174,7 +184,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public RenewalRequest GetRenewalRequest(EnrollmentProductInfo productInfo, string uUId, string csr,
             Dictionary<string, string[]> sans)
         {
-            var bytes = Encoding.UTF8.GetBytes(csr);
+            var cert = "-----BEGIN CERTIFICATE REQUEST-----\r\n";
+            cert = cert + Pemify(csr);
+            cert = cert + "\r\n-----END CERTIFICATE REQUEST-----";
+
+            var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
             var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
@@ -228,7 +242,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public ReissueRequest GetReissueRequest(EnrollmentProductInfo productInfo, string uUId, string csr,
             Dictionary<string, string[]> sans)
         {
-            var bytes = Encoding.UTF8.GetBytes(csr);
+            var cert = "-----BEGIN CERTIFICATE REQUEST-----\r\n";
+            cert = cert + Pemify(csr);
+            cert = cert + "\r\n-----END CERTIFICATE REQUEST-----";
+
+            var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
             var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
