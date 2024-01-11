@@ -1,6 +1,3 @@
-v1.0.11
-- Added CSR Headers to Fix Issue with CSC Pre-Validation
-
 v1.0.10
 - Sync Issue where Sync only works after service restart fixed
 - Sync Fix when errors occur in the CSC Api so next sync works
