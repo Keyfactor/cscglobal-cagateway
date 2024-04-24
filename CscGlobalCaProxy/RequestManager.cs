@@ -60,7 +60,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public int GetRevokeResult(IRevokeResponse revokeResponse)
         {
             if (revokeResponse.RegistrationError != null)
-                return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED);
+                throw new Exception("Revoke error occurred: " + revokeResponse?.RegistrationError?.Description);
 
             return Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED);
         }
