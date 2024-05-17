@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -96,27 +97,25 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                             if (fileContent.Length > 0)
                             {
-                                var certData = fileContent.Replace("\r\n", string.Empty);
-                                var splitCerts =
-                                    certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" },
-                                        StringSplitOptions.RemoveEmptyEntries);
-                                foreach (var cert in splitCerts)
-                                    if (!cert.Contains(".crt"))
-                                    {
-                                        Logger.Trace($"Split Cert Value: {cert}");
+                                var certCollection=GetCertificateChain(fileContent);
+                                var leafItem = certCollection.Select(cert => cert.type = "leaf").FirstOrDefault();
+                                if (leafItem != null)
+                                {
+                                    Logger.Trace($"Leaf Cert Value: {leafItem}");
 
-                                        var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        blockingBuffer.Add(new CAConnectorCertificate
-                                        {
-                                            CARequestID = $"{currentResponseItem?.Uuid}",
-                                            Certificate = cert,
-                                            SubmissionDate = currentResponseItem?.OrderDate == null
-                                                ? Convert.ToDateTime(currentCert.NotBefore)
-                                                : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                            Status = certStatus,
-                                            ProductID = productId
-                                        }, cancelToken);
-                                    }
+                                    var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(leafItem));
+                                    blockingBuffer.Add(new CAConnectorCertificate
+                                    {
+                                        CARequestID = $"{currentResponseItem?.Uuid}",
+                                        Certificate = leafItem,
+                                        SubmissionDate = currentResponseItem?.OrderDate == null
+                                            ? Convert.ToDateTime(currentCert.NotBefore)
+                                            : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                        Status = certStatus,
+                                        ProductID = productId
+                                    }, cancelToken);
+                                }
+
                             }
                         }
                     }
@@ -236,22 +235,145 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return null;
         }
 
+        private X509Certificate2 FindRootCertificate(X509Certificate2Collection certificates)
+        {
+            Logger.MethodEntry();
+            foreach (X509Certificate2 certificate in certificates)
+            {
+                Logger.Trace("Looping through all the certs to find the root");
+
+                if (IsRootCertificate(certificate, certificates))
+                {
+                    Logger.Trace("Found Root");
+                    return certificate;
+                }
+            }
+            Logger.MethodExit();
+            // Return null if no root certificate is found
+            return null;
+        }
+
+        private bool IsRootCertificate(X509Certificate2 certificate, X509Certificate2Collection certificates)
+        {
+            Logger.MethodEntry();
+            // Check if the certificate is self-signed
+            if (certificate?.Subject == certificate?.Issuer)
+            {
+                Logger.Trace("Subject is equal to issuer");
+                // Check if there is no issuer in the collection with a matching subject
+                foreach (X509Certificate2 issuerCertificate in certificates)
+                {
+                    Logger.Trace("Checking if there is no issuer in the collection with matching subject");
+                    if (issuerCertificate.Subject == certificate?.Subject && !issuerCertificate.Equals(certificate))
+                    {
+                        Logger.Trace("Subject equal cert subject and issuer cert not equal to certificate");
+                        Logger.MethodExit();
+                        return false;
+                    }
+                }
+                Logger.MethodExit();
+                return true;
+            }
+            Logger.MethodExit();
+            return false;
+        }
+
+        private List<(X509Certificate2 certificate, string type)> GetCertificateChain(string jobCertificate)
+        {
+            Logger.MethodEntry();
+            // Decode the base64-encoded chain to get the bytes
+            byte[] certificateChainBytes = Convert.FromBase64String(jobCertificate);
+            Logger.Trace($"Cert Chain Bytes: {certificateChainBytes}");
+
+            // Create a collection to hold the certificates
+            X509Certificate2Collection certificateCollection = new X509Certificate2Collection();
+
+            Logger.Trace($"Created certificate collection");
+
+            // Load the certificates from the byte array
+            certificateCollection.Import(certificateChainBytes);
+
+            Logger.Trace($"Imported collection");
+
+            // Identify the root certificate
+            X509Certificate2 rootCertificate = FindRootCertificate(certificateCollection);
+
+            Logger.Trace("Found Root Certificate");
+
+            // Create a list to hold the ordered certificates
+            List<(X509Certificate2 certificate, string certType)> orderedCertificates = new List<(X509Certificate2, string)>();
+
+            Logger.Trace("Created a list to hold the ordered certificates");
+
+            // Add the root certificate to the ordered list
+            if (rootCertificate != null)
+                orderedCertificates.Add((rootCertificate, "root"));
+
+            Logger.Trace("Added Root To Collection");
+
+            // Add intermediate certificates to the ordered list and mark them as intermediate
+            foreach (X509Certificate2 certificate in certificateCollection)
+            {
+                Logger.Trace("In loop to Add intermediate certificates to the ordered list and mark them as intermediate");
+                // Exclude root certificate
+                if (!certificate.Equals(rootCertificate))
+                {
+                    Logger.Trace("Excluded root certificate");
+                    // Check if the certificate is not the leaf certificate
+                    bool isLeaf = true;
+                    foreach (X509Certificate2 potentialIssuer in certificateCollection)
+                    {
+                        Logger.Trace("Check if the certificate is not the leaf certificate");
+                        if (certificate?.Subject == potentialIssuer?.Issuer && potentialIssuer != null && !potentialIssuer.Equals(certificate))
+                        {
+                            Logger.Trace("Leaf is false");
+                            isLeaf = false;
+                            break;
+                        }
+                    }
+
+                    // If the certificate is not the leaf certificate, add it as an intermediate certificate
+                    if (!isLeaf)
+                    {
+                        Logger.Trace("If the certificate is not the leaf certificate, add it as an intermediate certificate");
+                        orderedCertificates.Add((certificate, "intermediate"));
+                    }
+                }
+            }
+
+            // Add leaf certificates to the ordered list
+            foreach (X509Certificate2 certificate in certificateCollection)
+            {
+                Logger.Trace("Check for add leaf certificates to the ordered list");
+                if (!orderedCertificates.Exists(c => c.certificate != null && c.certificate.Equals(certificate)))
+                {
+                    Logger.Trace("Added leaf certificates to the ordered list");
+                    orderedCertificates.Add((certificate, "leaf"));
+                }
+            }
+            Logger.MethodExit();
+            return orderedCertificates;
+        }
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            var keyfactorCaId = caRequestId.Substring(0, 36); //todo fix to use pipe delimiter
+            var keyfactorCaId = caRequestId.Substring(0, 36);
             Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
             var certificateResponse =
                 Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
                     .Result;
 
+            var certCollection = GetCertificateChain(certificateResponse.Certificate);
             Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
+            var leafItem = certCollection.Select(cert => cert.type = "leaf").FirstOrDefault();
+            
+            Logger.Trace($"Single Cert Leaf: {leafItem}");
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
             return new CAConnectorCertificate
             {
                 CARequestID = keyfactorCaId,
-                Certificate = certificateResponse.Certificate,
+                Certificate = leafItem,
                 Status = _requestManager.MapReturnStatus(certificateResponse.Status),
                 SubmissionDate = Convert.ToDateTime(certificateResponse.OrderDate)
             };

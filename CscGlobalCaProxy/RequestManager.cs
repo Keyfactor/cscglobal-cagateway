@@ -281,6 +281,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return evDetails;
         }
 
+
         public int MapReturnStatus(string cscGlobalStatus)
         {
             PKIConstants.Microsoft.RequestDisposition returnStatus;
