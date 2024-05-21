@@ -34,23 +34,33 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
 
-            Logger.Trace($"Staring Revoke Method");
-            var revokeResponse =
-                Task.Run(async () =>
-                        await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
-                    .Result; //todo fix to use pipe delimiter
-
-            Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
-            var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
-
-            if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+            try
             {
-                return -1;
-            }
+                Logger.Trace($"Staring Revoke Method");
+                var revokeResponse =
+                    Task.Run(async () =>
+                            await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
+                        .Result; //todo fix to use pipe delimiter
 
-            return revokeResult;
+                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+
+                var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
+
+                if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+                {
+                    if (!string.IsNullOrEmpty(revokeResponse?.RegistrationError?.Description))
+                    {
+                        throw new UnsuccessfulRequestException($"Revoke Failed with message {revokeResponse?.RegistrationError?.Description}", 30);
+                    }
+                }
+
+                return revokeResult;
+            }
+            catch(Exception e)
+            {
+                throw new Exception($"Revoke Failed with message {e?.Message}");
+            }
 
         }
 
@@ -96,27 +106,24 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                             if (fileContent.Length > 0)
                             {
+                                Logger.Trace($"File Content {fileContent}");
                                 var certData = fileContent.Replace("\r\n", string.Empty);
-                                var splitCerts =
-                                    certData.Split(new[] { "-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----" },
-                                        StringSplitOptions.RemoveEmptyEntries);
-                                foreach (var cert in splitCerts)
-                                    if (!cert.Contains(".crt"))
-                                    {
-                                        Logger.Trace($"Split Cert Value: {cert}");
+                                var certString = GetEndEntityCertificate(certData);
+                                var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(certString));
 
-                                        var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(cert));
-                                        blockingBuffer.Add(new CAConnectorCertificate
-                                        {
-                                            CARequestID = $"{currentResponseItem?.Uuid}",
-                                            Certificate = cert,
-                                            SubmissionDate = currentResponseItem?.OrderDate == null
-                                                ? Convert.ToDateTime(currentCert.NotBefore)
-                                                : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                            Status = certStatus,
-                                            ProductID = productId
-                                        }, cancelToken);
-                                    }
+                                if (certString.Length > 0)
+                                {
+                                    blockingBuffer.Add(new CAConnectorCertificate
+                                    {
+                                        CARequestID = $"{currentResponseItem?.Uuid}",
+                                        Certificate = certString,
+                                        SubmissionDate = currentResponseItem?.OrderDate == null
+                                            ? Convert.ToDateTime(currentCert.NotBefore)
+                                            : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                        Status = certStatus,
+                                        ProductID = productId
+                                    }, cancelToken);
+                                }
                             }
                         }
                     }
@@ -132,6 +139,41 @@ namespace Keyfactor.AnyGateway.CscGlobal
             }
 
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+        }
+
+        private string GetEndEntityCertificate(string certData)
+        {
+            var splitCerts =
+                certData.Split(new[] {"-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----"},
+                    StringSplitOptions.RemoveEmptyEntries);
+            
+            X509Certificate2Collection col = new X509Certificate2Collection();
+            foreach (var cert in splitCerts)
+            {
+                Logger.Trace($"Split Cert Value: {cert}");
+
+                //skip these headers that came with the split function
+                if (!cert.Contains(".crt"))
+                {
+                    col.Import(Encoding.UTF8.GetBytes(cert));
+                }
+            }
+
+            Logger.Trace("Getting End Entity Certificate");
+            var currentCert = CSS.PKI.X509.X509Utilities.GetEndEntityCertificate(col);
+            Logger.Trace("Converting to Byte Array");
+            var byteArray = currentCert?.Export(X509ContentType.Cert);
+            Logger.Trace("Initializing empty string");
+
+            var certString = string.Empty;
+            if (byteArray != null)
+            {
+                certString = Convert.ToBase64String(byteArray);
+            }
+
+            Logger.Trace($"Got certificate {certString}");
+            
+            return certString;
         }
 
         [Obsolete]
@@ -239,22 +281,42 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            var keyfactorCaId = caRequestId.Substring(0, 36); //todo fix to use pipe delimiter
-            Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
-            var certificateResponse =
-                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
-                    .Result;
-
-            Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return new CAConnectorCertificate
+            try
             {
-                CARequestID = keyfactorCaId,
-                Certificate = certificateResponse.Certificate,
-                Status = _requestManager.MapReturnStatus(certificateResponse.Status),
-                SubmissionDate = Convert.ToDateTime(certificateResponse.OrderDate)
-            };
+                Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+                var keyfactorCaId = caRequestId?.Substring(0, 36); //todo fix to use pipe delimiter
+                Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
+                var certificateResponse =
+                    Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
+                        .Result;
+                
+                Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
+
+                var fileContent =
+                    Encoding.ASCII.GetString(
+                        Convert.FromBase64String(certificateResponse?.Certificate ?? string.Empty));
+
+                Logger.Trace($"File Content {fileContent}");
+                var certData = fileContent?.Replace("\r\n", string.Empty);
+                var certString = String.Empty;
+                if (!string.IsNullOrEmpty(certData))
+                    certString = GetEndEntityCertificate(certData);
+                Logger.Trace($"Cert String Content {certString}");
+
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+
+                return new CAConnectorCertificate
+                {
+                    CARequestID = keyfactorCaId,
+                    Certificate = certString,
+                    Status = _requestManager.MapReturnStatus(certificateResponse?.Status),
+                    SubmissionDate = Convert.ToDateTime(certificateResponse?.OrderDate)
+                };
+            }
+            catch(Exception e)
+            {
+                throw new Exception($"Error Occurred getting single cert {e.Message}");
+            }
         }
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)

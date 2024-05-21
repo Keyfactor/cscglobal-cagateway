@@ -1,3 +1,6 @@
+v1.1.1
+- Fix Revoke Serial Number Mismatch KF 10.1 and 22.1.0 GW combination
+- Only Syncing and GetSingleRecord on End Entity Cert to prevent errors.
 
 v1.1.0
 - Add Support for CNAME Domain Validation 
