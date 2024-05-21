@@ -34,23 +34,33 @@ namespace Keyfactor.AnyGateway.CscGlobal
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
 
-            Logger.Trace($"Staring Revoke Method");
-            var revokeResponse =
-                Task.Run(async () =>
-                        await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
-                    .Result; //todo fix to use pipe delimiter
-
-            Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
-            var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
-
-            if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+            try
             {
-                return -1;
-            }
+                Logger.Trace($"Staring Revoke Method");
+                var revokeResponse =
+                    Task.Run(async () =>
+                            await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
+                        .Result; //todo fix to use pipe delimiter
 
-            return revokeResult;
+                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+
+                var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
+
+                if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+                {
+                    if (!string.IsNullOrEmpty(revokeResponse?.RegistrationError?.Description))
+                    {
+                        throw new UnsuccessfulRequestException($"Revoke Failed with message {revokeResponse?.RegistrationError?.Description}", 30);
+                    }
+                }
+
+                return revokeResult;
+            }
+            catch(Exception e)
+            {
+                throw new Exception($"Revoke Failed with message {e?.Message}");
+            }
 
         }
 
@@ -145,7 +155,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 //skip these headers that came with the split function
                 if (!cert.Contains(".crt"))
                 {
-                    col.Import(cert);
+                    col.Import(Encoding.UTF8.GetBytes(cert));
                 }
             }
 
@@ -271,33 +281,42 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            var keyfactorCaId = caRequestId.Substring(0, 36); //todo fix to use pipe delimiter
-            Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
-            var certificateResponse =
-                Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
-                    .Result;
-
-            Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
-
-            var fileContent =
-                Encoding.ASCII.GetString(
-                    Convert.FromBase64String(certificateResponse?.Certificate ?? string.Empty));
-
-            Logger.Trace($"File Content {fileContent}");
-            var certData = fileContent.Replace("\r\n", string.Empty);
-            var certString = GetEndEntityCertificate(certData);
-            Logger.Trace($"Cert String Content {certString}");
-            
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
-            return new CAConnectorCertificate
+            try
             {
-                CARequestID = keyfactorCaId,
-                Certificate = certString,
-                Status = _requestManager.MapReturnStatus(certificateResponse?.Status),
-                SubmissionDate = Convert.ToDateTime(certificateResponse?.OrderDate)
-            };
+                Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+                var keyfactorCaId = caRequestId?.Substring(0, 36); //todo fix to use pipe delimiter
+                Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
+                var certificateResponse =
+                    Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
+                        .Result;
+                
+                Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
+
+                var fileContent =
+                    Encoding.ASCII.GetString(
+                        Convert.FromBase64String(certificateResponse?.Certificate ?? string.Empty));
+
+                Logger.Trace($"File Content {fileContent}");
+                var certData = fileContent?.Replace("\r\n", string.Empty);
+                var certString = String.Empty;
+                if (!string.IsNullOrEmpty(certData))
+                    certString = GetEndEntityCertificate(certData);
+                Logger.Trace($"Cert String Content {certString}");
+
+                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+
+                return new CAConnectorCertificate
+                {
+                    CARequestID = keyfactorCaId,
+                    Certificate = certString,
+                    Status = _requestManager.MapReturnStatus(certificateResponse?.Status),
+                    SubmissionDate = Convert.ToDateTime(certificateResponse?.OrderDate)
+                };
+            }
+            catch(Exception e)
+            {
+                throw new Exception($"Error Occurred getting single cert {e.Message}");
+            }
         }
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
