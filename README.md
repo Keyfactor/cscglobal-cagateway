@@ -1,141 +1,101 @@
+CSC Global
 
-# CSC Global
-
-Csc Global operates a PKI as a service platform for customers around the globe.  The AnyGateway solution for CscGlobal is designed to allow Keyfactor Command the ability to: - Sync certificates issued from the CA - Request new certificates from the CA - Revoke certificates directly from Keyfactor Command
-
-#### Integration status: Production - Ready for use in production environments.
-
-## About the Keyfactor AnyCA Gateway DCOM Connector
+Csc Global operates a PKI as a service platform for customers around the globe. The AnyGateway solution for CscGlobal is designed to allow Keyfactor Command the ability to: - Sync certificates issued from the CA - Request new certificates from the CA - Revoke certificates directly from Keyfactor Command
+Integration status: Production - Ready for use in production environments.
+About the Keyfactor AnyCA Gateway DCOM Connector
 
 This repository contains an AnyCA Gateway Connector, which is a plugin to the Keyfactor AnyGateway. AnyCA Gateway Connectors allow Keyfactor Command to be used for inventory, issuance, and revocation of certificates from a third-party certificate authority.
-
-## Support for CSC Global
+Support for CSC Global
 
 CSC Global is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket via the Keyfactor Support Portal at https://support.keyfactor.com
+To report a problem or suggest a new feature, use the Issues tab. If you want to contribute actual bug fixes or proposed enhancements, use the Pull requests tab.
+Keyfactor AnyCA Gateway Framework Supported
 
-###### To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
-
----
-
-
----
-
-
-
-
-
-## Keyfactor AnyCA Gateway Framework Supported
 The Keyfactor gateway framework implements common logic shared across various gateway implementations and handles communication with Keyfactor Command. The gateway framework hosts gateway implementations or plugins that understand how to communicate with specific CAs. This allows you to integrate your third-party CAs with Keyfactor Command such that they behave in a manner similar to the CAs natively supported by Keyfactor Command.
 
+This gateway extension was compiled against version of the AnyCA Gateway DCOM Framework. You will need at least this version of the framework Installed. If you have a later AnyGateway Framework Installed you will probably need to add binding redirects in the CAProxyServer.exe.config file to make things work properly.
 
+Keyfactor CAGateway Install Guide
+Getting Started
+Standard Gateway Installation
 
+To begin, you must have the CA Gateway Service 21.3.2 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 8.7.0.0. To install the gateway follow these instructions.
 
-This gateway extension was compiled against version  of the AnyCA Gateway DCOM Framework.  You will need at least this version of the framework Installed. If you have a later AnyGateway Framework Installed you will probably need to add binding redirects in the CAProxyServer.exe.config file to make things work properly.
+    Gateway Server - run the installation .msi - Get from Keyfactor
 
+    Gateway Server - If you have the rights to install the database (usually in a Non SQL PAAS Environment) Using Powershell, run the following command to create the gateway database.
 
-[Keyfactor CAGateway Install Guide](https://software.keyfactor.com/Guides/AnyGateway_Generic/Content/AnyGateway/Introduction.htm)
+    SQL Server Windows Auth
 
-
-
----
-
-
-*** 
-# Getting Started
-## Standard Gateway Installation
-To begin, you must have the CA Gateway Service 21.3.2 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 8.7.0.0.
-To install the gateway follow these instructions.
-
-1) Gateway Server - run the installation .msi - Get from Keyfactor
-
-2) Gateway Server - If you have the rights to install the database (usually in a Non SQL PAAS Environment) Using Powershell, run the following command to create the gateway database.
-
-   **SQL Server Windows Auth**
-    ```
     %InstallLocation%\DatabaseManagementConsole.exe create -s [database server name] -d [database name]
-    ```
-   Note if you are using SQL Authentication, then you need to run
-   
-   **SQL Server SQL Authentication**
 
-   ```
-   %InstallLocation%\DatabaseManagementConsole.exe create -s [database server name] -d [database name] -u [sql user] -p [sql password]
-   ```
+    Note if you are using SQL Authentication, then you need to run
 
-   If you do **not** have rights to created the database then have the database created ahead of time by the support team and just populate the database
+    SQL Server SQL Authentication
 
-   ## Populate commands below
+    %InstallLocation%\DatabaseManagementConsole.exe create -s [database server name] -d [database name] -u [sql user] -p [sql password]
 
-   **Windows Authentication**
+    If you do not have rights to created the database then have the database created ahead of time by the support team and just populate the database
+    Populate commands below
 
-   ```
-   %InstallLocation%\DatabaseManagementConsole.exe populate -s [database server name] -d [database name]
-   ```
+    Windows Authentication
 
-   **SQL Server SQL Authentication** 
+    %InstallLocation%\DatabaseManagementConsole.exe populate -s [database server name] -d [database name]
 
-   ```
-   %InstallLocation%\DatabaseManagementConsole.exe populate -s [database server name] -d [database name] -u [sql user] -p [sql password]
-   ```
+    SQL Server SQL Authentication
 
-3) Gateway Server - run the following Powershell to import the Cmdlets
+    %InstallLocation%\DatabaseManagementConsole.exe populate -s [database server name] -d [database name] -u [sql user] -p [sql password]
 
-   C:\Program Files\Keyfactor\Keyfactor AnyGateway\ConfigurationCmdlets.dll (must be imported into Powershell)
-   ```ps
-   Import-Module C:\Program Files\Keyfactor\Keyfactor AnyGateway\ConfigurationCmdlets.dll
-   ```
+    Gateway Server - run the following Powershell to import the Cmdlets
 
-4) Gateway Server - Run the Following Powershell script to set the gateway encryption cert
+    C:\Program Files\Keyfactor\Keyfactor AnyGateway\ConfigurationCmdlets.dll (must be imported into Powershell)
 
-   ### Set-KeyfactorGatewayEncryptionCert
-   This cmdlet will generate a self-signed certificate used to encrypt the database connection string. It populates a registry value with the serial number of the certificate to be used. The certificate is stored in the LocalMachine Personal Store and the registry key populated is:
+    Import-Module C:\Program Files\Keyfactor\Keyfactor AnyGateway\ConfigurationCmdlets.dll
 
-   HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvcProxy\Parameters\EncryptSerialNumber
-   No parameters are required to run this cmdlet.
+    Gateway Server - Run the Following Powershell script to set the gateway encryption cert
+    Set-KeyfactorGatewayEncryptionCert
 
-5) Gateway Server - Run the following Powershell Script to Set the Database Connection
+    This cmdlet will generate a self-signed certificate used to encrypt the database connection string. It populates a registry value with the serial number of the certificate to be used. The certificate is stored in the LocalMachine Personal Store and the registry key populated is:
 
-   ### Set-KeyfactorGatewayDatabaseConnection
-   This cmdlet will set and encrypt the database connection string used by the AnyGateway service. 
+    HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\CertSvcProxy\Parameters\EncryptSerialNumber No parameters are required to run this cmdlet.
 
-   **Windows Authentication**
-   ```ps
-   Set-KeyfactorGatewayDatabaseConnection -Server [db server name] -Database [database name]
-   ```
+    Gateway Server - Run the following Powershell Script to Set the Database Connection
+    Set-KeyfactorGatewayDatabaseConnection
 
-   **SQL Authentication**
-   ```ps
-   $KeyfactorCredentials = Get-Credentials
-   Set-KeyfactorGatewayDatabaseConnection -Server [db server name] -Database [database name] -Account [$KeyfactorCredentials]
-   ```
-## Standard Gateway Configuration Finished
----
+    This cmdlet will set and encrypt the database connection string used by the AnyGateway service.
 
+    Windows Authentication
 
-## CSC Global AnyGateway Specific Configuration
-It is important to note that importing the  CSC Global configuration into the CA Gateway prior to installing the binaries must be completed. Additionally, the CA Gateway service
-must be running in order to succesfully import the configuation. When the CA Gateway service starts it will attempt to validate the connection information to 
-the CA.  Without the imported configuration, the service will fail to start.
+    Set-KeyfactorGatewayDatabaseConnection -Server [db server name] -Database [database name]
 
-### Binary Installation
+    SQL Authentication
 
-1) Get the Latest Zip File from [Here](https://github.com/Keyfactor/cscglobal-cagateway/releases)
-2) Gateway Server - Copy the CscGlobalCaProxy.dll to the location where the Gateway Framework was installed (usually C:\Program Files\Keyfactor\Keyfactor AnyGateway)
+    $KeyfactorCredentials = Get-Credentials
+    Set-KeyfactorGatewayDatabaseConnection -Server [db server name] -Database [database name] -Account [$KeyfactorCredentials]
 
-### Configuration Changes
-1) Gateway Server - Edit the CAProxyServer.exe.config file and replace the line that says "NoOp" with the line below:
-   ```
-   <alias alias="CAConnector" type="Keyfactor.AnyGateway.CscGlobal.CscGlobalCaProxy, CscGlobalCaProxy"/>
-   ```
-2) Gateway Server - Install the Root CSC Global Certificate that was received from CSC Global 
+Standard Gateway Configuration Finished
+CSC Global AnyGateway Specific Configuration
 
-3) Gateway Server - Install the Intermediate CSC Global Certificate that was received from CSC Global 
+It is important to note that importing the CSC Global configuration into the CA Gateway prior to installing the binaries must be completed. Additionally, the CA Gateway service must be running in order to succesfully import the configuation. When the CA Gateway service starts it will attempt to validate the connection information to the CA. Without the imported configuration, the service will fail to start.
+Binary Installation
 
-4) Gateway Server - Take the sample Config.json located [Here](https://github.com/Keyfactor/cscglobal-cagateway/raw/main/SampleConfig.json) and make the following modifications
+    Get the Latest Zip File from Here
+    Gateway Server - Copy the CscGlobalCaProxy.dll to the location where the Gateway Framework was installed (usually C:\Program Files\Keyfactor\Keyfactor AnyGateway)
 
-- *Security Settings Modifications* (Swap this out for the typical Gateway Security Settings for Test or Prod)
+Configuration Changes
 
-```
+    Gateway Server - Edit the CAProxyServer.exe.config file and replace the line that says "NoOp" with the line below:
+
+    <alias alias="CAConnector" type="Keyfactor.AnyGateway.CscGlobal.CscGlobalCaProxy, CscGlobalCaProxy"/>
+
+    Gateway Server - Install the Root CSC Global Certificate that was received from CSC Global
+
+    Gateway Server - Install the Intermediate CSC Global Certificate that was received from CSC Global
+
+    Gateway Server - Take the sample Config.json located Here and make the following modifications
+
+    Security Settings Modifications (Swap this out for the typical Gateway Security Settings for Test or Prod)
+
   "Security": {
     "KEYFACTOR\\administrator": {
       "READ": "Allow",
@@ -155,20 +115,20 @@ the CA.  Without the imported configuration, the service will fail to start.
       "OFFICER": "Allow",
       "ADMINISTRATOR": "Allow"
     }
-```
-- *CSC Global Environment Settings* (Modify these with the keys and Urls obtained from Csc Global)
-```
+
+    CSC Global Environment Settings (Modify these with the keys and Urls obtained from Csc Global)
+
   "CAConnection": {
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
     "ApiKey": "SALDJDSFKLDFS",
     "BearerToken": "ASDLKFSALDKSDALK",
     "TemplateSync": "On"
   }
-```
 
-**Template Settings**
-- For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
-```
+Template Settings
+
+    For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters. You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters. You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
+
   "Templates": {
     "CSC TrustedSecure Premium Certificate": {
       "ProductID": "CSC TrustedSecure Premium Certificate",
@@ -211,10 +171,9 @@ the CA.  Without the imported configuration, the service will fail to start.
 	}
     }
   }
-```
 
-- *Gateway Settings*
-```
+    Gateway Settings
+
   "CertificateManagers": null,
   "GatewayRegistration": {
     "LogicalName": "CscGlobal",
@@ -224,255 +183,216 @@ the CA.  Without the imported configuration, the service will fail to start.
       "Thumbprint": "525c47fb3a5e0655fbd4be963ca1e94d5fecb43d"
     }
   }
-```
 
-- *Service Settings* (Modify these to be in accordance with Keyfactor Standard Gateway Production Settings)
-```
+    Service Settings (Modify these to be in accordance with Keyfactor Standard Gateway Production Settings)
+
   "ServiceSettings": {
     "ViewIdleMinutes": 1,
     "FullScanPeriodHours": 1,
     "PartialScanPeriodMinutes": 1
   }
-```
 
-5) Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
+    Gateway Server - Save the newly modified config.json to the following location "C:\Program Files\Keyfactor\Keyfactor AnyGateway"
 
-### Template Installation
+Template Installation
 
-**PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION**
+PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION
 
-1) **Create ADFS Certificate Templates for the Following Products**
-- CSC TrustedSecure Premium Certificate
-- CSC TrustedSecure EV Certificate
-- CSC TrustedSecure UC Certificate
-- CSC TrustedSecure Premium Wildcard Certificate
-- CSC TrustedSecure Domain Validated SSL
-- CSC TrustedSecure Domain Validated Wildcard SSL
-- CSC TrustedSecure Domain Validated UC Certificate
+    Create ADFS Certificate Templates for the Following Products
 
-2) **Import Into Keyfactor using the template import functionality**
+    CSC TrustedSecure Premium Certificate
+    CSC TrustedSecure EV Certificate
+    CSC TrustedSecure UC Certificate
+    CSC TrustedSecure Premium Wildcard Certificate
+    CSC TrustedSecure Domain Validated SSL
+    CSC TrustedSecure Domain Validated Wildcard SSL
+    CSC TrustedSecure Domain Validated UC Certificate
 
-3) **Edit each template and modify the Details and Enrollment Fields as Follows**
-*CSC TrustedSecure Premium Certificate - Details Tab**
+    Import Into Keyfactor using the template import functionality
 
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Premium Certificate
-Template Display Name	| CSC TrustedSecure Premium Certificate
-Friendly Name	| CSC TrustedSecure Premium Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
+    Edit each template and modify the Details and Enrollment Fields as Follows CSC TrustedSecure Premium Certificate - Details Tab*
 
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure Premium Certificate
+Template Display Name 	CSC TrustedSecure Premium Certificate
+Friendly Name 	CSC TrustedSecure Premium Certificate
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-**CSC TrustedSecure Premium Certificate - Enrollment Fields**
+CSC TrustedSecure Premium Certificate - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
 
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
+CSC TrustedSecure EV Certificate - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure EV Certificate
+Template Display Name 	CSC TrustedSecure EV Certificate
+Friendly Name 	CSC TrustedSecure EV Certificate
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-**CSC TrustedSecure EV Certificate - Details Tab**
+CSC TrustedSecure EV Certificate - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
+Organization Country 	String 	N/A
 
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure EV Certificate
-Template Display Name	| CSC TrustedSecure EV Certificate
-Friendly Name	| CSC TrustedSecure EV Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
+CSC TrustedSecure UC Certificate - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure UC Certificate
+Template Display Name 	CSC TrustedSecure UC Certificate
+Friendly Name 	CSC TrustedSecure UC Certificate
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
+CSC TrustedSecure UC Certificate - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
+Addtl Sans Comma Separated DVC Emails 	String 	N/A
 
-**CSC TrustedSecure EV Certificate - Enrollment Fields**
+CSC TrustedSecure Premium Wildcard Certificate - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure Premium Wildcard Certificate
+Template Display Name 	CSC TrustedSecure Premium Wildcard Certificate
+Friendly Name 	CSC TrustedSecure Premium Wildcard Certificate
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Organization Country | String | N/A
+CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
 
-**CSC TrustedSecure UC Certificate - Details Tab**
+CSC TrustedSecure Domain Validated SSL - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure Domain Validated SSL
+Template Display Name 	CSC TrustedSecure Domain Validated SSL
+Friendly Name 	CSC TrustedSecure Domain Validated SSL
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure UC Certificate
-Template Display Name	| CSC TrustedSecure UC Certificate
-Friendly Name	| CSC TrustedSecure UC Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
+CSC TrustedSecure Domain Validated SSL - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
 
+CSC TrustedSecure Domain Validated Wildcard SSL - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure Domain Validated Wildcard SSL
+Template Display Name 	CSC TrustedSecure Domain Validated Wildcard SSL
+Friendly Name 	CSC TrustedSecure Domain Validated Wildcard SSL
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-**CSC TrustedSecure UC Certificate - Enrollment Fields**
+CSC TrustedSecure Domain Validated Wildcard SSL - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
 
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Addtl Sans Comma Separated DVC Emails | String | N/A
-	
+CSC TrustedSecure Domain Validated UC Certificate - Details Tab
+CONFIG ELEMENT 	DESCRIPTION
+Template Short Name 	CSC TrustedSecure Domain Validated UC Certificate
+Template Display Name 	CSC TrustedSecure Domain Validated UC Certificate
+Friendly Name 	CSC TrustedSecure Domain Validated UC Certificate
+Keys Size 	2048
+Enforce RFC 2818 Compliance 	True
+CSR Enrollment 	True
+Pfx Enrollment 	True
 
-**CSC TrustedSecure Premium Wildcard Certificate - Details Tab**
+CSC TrustedSecure Domain Validated UC Certificate - Enrollment Fields
+NAME 	DATA TYPE 	VALUES
+Term 	Multiple Choice 	12,24
+Applicant First Name 	String 	N/A
+Applicant Last Name 	String 	N/A
+Applicant Email Address 	String 	N/A
+Applicant Phone (+nn.nnnnnnnn) 	String 	N/A
+Domain Control Validation Method 	Multiple Choice 	EMAIL
+Organization Contact 	Multiple Choice 	Get From CSC Differs For Clients
+Business Unit 	Multiple Choice 	Get From CSC Differs For Clients
+Notification Email(s) Comma Separated 	String 	N/A
+CN DCV Email (admin@yourdomain.com) 	String 	N/A
+Addtl Sans Comma Separated DVC Emails 	String 	N/A
+Certificate Authority Installation
 
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Premium Wildcard Certificate
-Template Display Name	| CSC TrustedSecure Premium Wildcard Certificate
-Friendly Name	| CSC TrustedSecure Premium Wildcard Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
+    Gateway Server - Start the Keyfactor Gateway Service
+    Run the set Gateway command similar to below
 
-
-**CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated SSL - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated SSL
-Template Display Name	| CSC TrustedSecure Domain Validated SSL
-Friendly Name	| CSC TrustedSecure Domain Validated SSL
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated SSL - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated Wildcard SSL - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Template Display Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Friendly Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated Wildcard SSL - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated UC Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated UC Certificate
-Template Display Name	| CSC TrustedSecure Domain Validated UC Certificate
-Friendly Name	| CSC TrustedSecure Domain Validated UC Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated UC Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Addtl Sans Comma Separated DVC Emails | String | N/A
-
-
-### Certificate Authority Installation
-1) Gateway Server - Start the Keyfactor Gateway Service
-2) Run the set Gateway command similar to below
-```ps
 Set-KeyfactorGatewayConfig -LogicalName "CSCGlobal" -FilePath [path to json file] -PublishAd
-```
-3) Command Server - Import the certificate authority in Keyfactor Portal 
 
-***
-### Meta Data Fix Patch for Version 1.0.9 Steps
-1) Stop the CSC Global Gateway Service
-2) Run the following SQL In your CSC Global Gateway Database <br/>
+    Command Server - Import the certificate authority in Keyfactor Portal
 
-```Delete Certificates WHERE LEN("CARequestId") <> 36```
+Meta Data Fix Patch for Version 1.0.9 Steps
 
-3) Copy the New CSCGlobal v1.0.9 or later Binaries to the Gateway Directory Typically “c:\Progam Files\Keyfactor\Keyfactor AnyGateway” on the Gateway Server
-4) Start the Gateway service and wait for the next sync between the GW Database and Keyfactor
+    Stop the CSC Global Gateway Service
+    Run the following SQL In your CSC Global Gateway Database
 
-### License
-[Apache](https://apache.org/licenses/LICENSE-2.0)
+Delete Certificates WHERE LEN("CARequestId") <> 36
 
+    Copy the New CSCGlobal v1.0.9 or later Binaries to the Gateway Directory Typically “c:\Progam Files\Keyfactor\Keyfactor AnyGateway” on the Gateway Server
+    Start the Gateway service and wait for the next sync between the GW Database and Keyfactor
 
+License
+
+Apache
