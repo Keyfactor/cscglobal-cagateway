@@ -160,6 +160,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
                     return "2";
                 case "CSC TrustedSecure Premium Wildcard Certificate":
                     return "1";
+                case "CSC Trusted Secure Domain Validated SSL":
+                    return "4";
+                case "CSC Trusted Secure Domain Validated Wildcard SSL":
+                    return "5";
+                case "CSC Trusted Secure Domain Validated UC Certificate":
+                    return "6";
                 case "CSC TrustedSecure Domain Validated SSL":
                     return "4";
                 case "CSC TrustedSecure Domain Validated Wildcard SSL":
