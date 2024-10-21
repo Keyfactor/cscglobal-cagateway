@@ -24,14 +24,14 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 return new EnrollmentResult
                 {
                     Status = 30, //failure
-                    CARequestID = renewResponse.Result.Status.Uuid,
+                    CARequestID = renewResponse?.Result?.Status?.Uuid,
                     StatusMessage = renewResponse.RegistrationError.Description
                 };
 
             return new EnrollmentResult
             {
                 Status = 13, //success
-
+                CARequestID = renewResponse.Result.Status.Uuid,
                 StatusMessage = $"Renewal Successfully Completed For {renewResponse.Result.CommonName}"
             };
         }
