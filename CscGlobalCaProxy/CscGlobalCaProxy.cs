@@ -81,54 +81,64 @@ namespace Keyfactor.AnyGateway.CscGlobal
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
             try
             {
+                CertificateListResponse certs;
+
                 if (certificateAuthoritySyncInfo.DoFullSync)
                 {
-                    var certs = Task.Run(async () => await CscGlobalClient.SubmitCertificateListRequestAsync()).Result;
+                    Logger.Trace("Performing Full Sync");
+                    certs = Task.Run(async () => await CscGlobalClient.SubmitCertificateListRequestAsync()).Result;
+                }
+                else
+                {
+                    // Incremental sync - get certificates from the last X days (default 5)
+                    var effectiveDate = DateTime.Now.AddDays(-Constants.IncrementalSyncDays);
+                    Logger.Trace($"Performing Incremental Sync with effectiveDate: {effectiveDate:yyyy/MM/dd}");
+                    certs = Task.Run(async () => await CscGlobalClient.SubmitIncrementalCertificateListRequestAsync(effectiveDate)).Result;
+                }
 
-                    foreach (var currentResponseItem in certs.Results)
+                foreach (var currentResponseItem in certs.Results)
+                {
+
+                    cancelToken.ThrowIfCancellationRequested();
+                    Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
+                    var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
+
+                    //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
+                    if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
+                        certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
                     {
+                        //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
+                        var productId = "CscGlobal";
+                        if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
 
-                        cancelToken.ThrowIfCancellationRequested();
-                        Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
-                        var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
+                        var fileContent =
+                            Encoding.ASCII.GetString(
+                                Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
 
-                        //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
-                        if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
-                            certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
+                        if (fileContent.Length > 0)
                         {
-                            //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
-                            var productId = "CscGlobal";
-                            if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+                            Logger.Trace($"File Content {fileContent}");
+                            var certData = fileContent.Replace("\r\n", string.Empty);
+                            var certString = GetEndEntityCertificate(certData);
+                            var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(certString));
 
-                            var fileContent =
-                                Encoding.ASCII.GetString(
-                                    Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
-
-                            if (fileContent.Length > 0)
+                            if (certString.Length > 0)
                             {
-                                Logger.Trace($"File Content {fileContent}");
-                                var certData = fileContent.Replace("\r\n", string.Empty);
-                                var certString = GetEndEntityCertificate(certData);
-                                var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(certString));
-
-                                if (certString.Length > 0)
+                                blockingBuffer.Add(new CAConnectorCertificate
                                 {
-                                    blockingBuffer.Add(new CAConnectorCertificate
-                                    {
-                                        CARequestID = $"{currentResponseItem?.Uuid}",
-                                        Certificate = certString,
-                                        SubmissionDate = currentResponseItem?.OrderDate == null
-                                            ? Convert.ToDateTime(currentCert.NotBefore)
-                                            : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                        Status = certStatus,
-                                        ProductID = productId
-                                    }, cancelToken);
-                                }
+                                    CARequestID = $"{currentResponseItem?.Uuid}",
+                                    Certificate = certString,
+                                    SubmissionDate = currentResponseItem?.OrderDate == null
+                                        ? Convert.ToDateTime(currentCert.NotBefore)
+                                        : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                    Status = certStatus,
+                                    ProductID = productId
+                                }, cancelToken);
                             }
                         }
                     }
-                    blockingBuffer.CompleteAdding();
                 }
+                blockingBuffer.CompleteAdding();
             }
             catch (Exception e)
             {
