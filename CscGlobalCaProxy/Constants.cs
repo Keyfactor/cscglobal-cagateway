@@ -6,5 +6,6 @@
         public static string CscGlobalApiKey = "ApiKey";
         public static string BearerToken = "BearerToken";
         public static int DefaultPageSize = 100;
+        public static int IncrementalSyncDays = 5;
     }
 }

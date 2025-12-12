@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
@@ -19,6 +20,8 @@ namespace Keyfactor.AnyGateway.CscGlobal.Interfaces
         Task<CertificateResponse> SubmitGetCertificateAsync(string certificateId);
 
         Task<CertificateListResponse> SubmitCertificateListRequestAsync();
+
+        Task<CertificateListResponse> SubmitIncrementalCertificateListRequestAsync(DateTime effectiveDate);
 
         Task<RevokeResponse> SubmitRevokeCertificateAsync(string uuId);
     }
