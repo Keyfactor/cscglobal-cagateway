@@ -1,7 +1,7 @@
 *** 
 # Getting Started
 ## Standard Gateway Installation
-To begin, you must have the CA Gateway Service 21.3.2 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 8.7.0.0.
+To begin, you must have the CA Gateway Service 22.1.0 installed and operational before attempting to configure the CSC Global plugin. This integration was tested with Keyfactor 10.4.0.0.
 To install the gateway follow these instructions.
 
 1) Gateway Server - run the installation .msi - Get from Keyfactor

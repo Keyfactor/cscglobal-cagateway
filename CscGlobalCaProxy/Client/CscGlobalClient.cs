@@ -59,7 +59,7 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         public async Task<RenewalResponse> SubmitRenewalAsync(
             RenewalRequest renewalRequest)
         {
-            using (var resp = await RestClient.PostAsync("/tls/renewal", new StringContent(
+            using (var resp = await RestClient.PostAsync("/dbs/api/v2/tls/renewal", new StringContent(
                 JsonConvert.SerializeObject(renewalRequest), Encoding.ASCII, "application/json")))
             {
                 Logger.Trace(JsonConvert.SerializeObject(renewalRequest));
@@ -67,17 +67,22 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
                 var settings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
                 if (resp.StatusCode == HttpStatusCode.BadRequest) //Csc Sends Errors back in 400 Json Response
                 {
+                    var rawErrorResponse = await resp.Content.ReadAsStringAsync();
+                    Logger.Trace("Logging Error Response Raw");
+                    Logger.Trace(rawErrorResponse);
                     var errorResponse =
-                        JsonConvert.DeserializeObject<RegistrationError>(await resp.Content.ReadAsStringAsync(),
+                        JsonConvert.DeserializeObject<RegistrationError>(rawErrorResponse,
                             settings);
                     var response = new RenewalResponse();
                     response.RegistrationError = errorResponse;
                     response.Result = null;
                     return response;
                 }
-
+                var rawRenewResponse = await resp.Content.ReadAsStringAsync();
+                Logger.Trace("Logging Success Response Raw");
+                Logger.Trace(rawRenewResponse);
                 var renewalResponse =
-                    JsonConvert.DeserializeObject<RenewalResponse>(await resp.Content.ReadAsStringAsync());
+                    JsonConvert.DeserializeObject<RenewalResponse>(rawRenewResponse);
                 return renewalResponse;
             }
         }
