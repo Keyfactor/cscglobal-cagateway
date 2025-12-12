@@ -158,6 +158,25 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
             return certificateListResponse;
         }
 
+        public async Task<CertificateListResponse> SubmitIncrementalCertificateListRequestAsync(DateTime effectiveDate)
+        {
+            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            var dateFilter = effectiveDate.ToString("yyyy/MM/dd");
+            Logger.Trace($"Incremental Sync with effectiveDate filter: {dateFilter}");
+            var resp = RestClient.GetAsync($"/dbs/api/v2/tls/certificate?filter=effectiveDate=ge={dateFilter}").Result;
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                var responseMessage = resp.Content.ReadAsStringAsync().Result;
+                Logger.Error(
+                    $"Failed Request to Keyfactor. Retrying request. Status Code {resp.StatusCode} | Message: {responseMessage}");
+            }
+
+            var certificateListResponse =
+                JsonConvert.DeserializeObject<CertificateListResponse>(await resp.Content.ReadAsStringAsync());
+            return certificateListResponse;
+        }
+
         private HttpClient ConfigureRestClient()
         {
             var clientHandler = new WebRequestHandler();
