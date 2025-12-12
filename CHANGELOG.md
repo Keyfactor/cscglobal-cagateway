@@ -1,5 +1,5 @@
 v1.2.0
--Incremental Sync Support with effectiveDate within last 5 days
+- Incremental Sync Support with effectiveDate within last 5 days
 
 v1.1.1
 - Fix Revoke Serial Number Mismatch KF 10.1 and 22.1.0 GW combination
