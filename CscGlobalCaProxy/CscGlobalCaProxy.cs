@@ -330,19 +330,10 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             flow.Step("ValidateInput", $"product={productInfo.ProductID}, hasPriorCert={productInfo.ProductParameters.ContainsKey("PriorCertSN")}");
 
-            // If the order is outside the renewal window, reissue under the active order instead of a paid renew
-            if (enrollmentType == RequestUtilities.EnrollmentType.Renew)
-            {
-                if (ShouldReissueInsteadOfRenew(flow, certificateDataReader, productInfo))
-                {
-                    flow.Step("RenewalDecision", "REISSUE (order outside renewal window)");
-                    enrollmentType = RequestUtilities.EnrollmentType.Reissue;
-                }
-                else
-                {
-                    flow.Step("RenewalDecision", "RENEWAL (paid order)");
-                }
-            }
+            // New, Renew and Reissue requests are resolved from the prior certificate's order, not from what Command asked for
+            var requestedType = enrollmentType;
+            enrollmentType = ResolveEnrollmentType(flow, certificateDataReader, productInfo, requestedType);
+            flow.Step("EnrollmentDecision", $"requested={requestedType}, resolved={enrollmentType}");
 
             switch (enrollmentType)
             {
@@ -363,10 +354,10 @@ namespace Keyfactor.AnyGateway.CscGlobal
         {
             flow.Step("SelectPath", "New");
 
-            //A renewal of an expired certificate reaches here as a New enrollment carrying PriorCertSN. CSC has no
-            //order to renew in that case, so it is simply ordered as a new certificate.
+            //A New request can still carry PriorCertSN (for example renewing an expired certificate). When the prior
+            //order can't be reissued or renewed it is simply ordered as a new certificate.
             if (productInfo.ProductParameters.ContainsKey("PriorCertSN"))
-                flow.Step("PriorCertIgnored", "expired certificate renewal is ordered as a new certificate");
+                flow.Step("PriorCertNotReused", "ordering as a new certificate");
 
             var missing = ValidateRequiredParameters(flow, productInfo);
             if (missing != null) return Failure(missing);
@@ -464,7 +455,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 string.IsNullOrWhiteSpace(priorCertSn))
                 throw new InvalidOperationException("The request does not identify the prior certificate (PriorCertSN is missing).");
 
-            var priorCert = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(priorCertSn));
+            var priorCert = FindCertificateBySerial(flow, certificateDataReader, priorCertSn);
             if (priorCert == null)
                 throw new InvalidOperationException($"The prior certificate with serial number '{priorCertSn}' was not found in the gateway database.");
 
@@ -478,29 +469,37 @@ namespace Keyfactor.AnyGateway.CscGlobal
         }
 
         /// <summary>
-        /// Decides renew vs. reissue from the order's remaining validity (order date + 1 year) rather than the
+        /// Resolves New / Renew / Reissue from the prior certificate's order (order date + 1 year) rather than the
         /// certificate's own expiration, so shorter-lived certs under an active order are reissued, not renewed.
-        /// Returns true when the order is outside the renewal window (reissue). Falls back to the certificate's
-        /// expiration when the order date is unavailable, and to renewal if nothing can be determined.
+        ///   explicit Reissue                          -> Reissue
+        ///   no PriorCertSN                            -> as requested
+        ///   order beyond the renewal window           -> Reissue (free, under the active order)
+        ///   order inside the window, not yet expired  -> Renew (paid)
+        ///   order expired                             -> New
+        /// Falls back to the certificate's expiration when the order date is unavailable. If the prior certificate
+        /// can't be found or evaluated, the requested type is kept so the caller reports a clear error.
         /// </summary>
-        private bool ShouldReissueInsteadOfRenew(FlowLogger flow, ICertificateDataReader certificateDataReader,
-            EnrollmentProductInfo productInfo)
+        private RequestUtilities.EnrollmentType ResolveEnrollmentType(FlowLogger flow,
+            ICertificateDataReader certificateDataReader, EnrollmentProductInfo productInfo,
+            RequestUtilities.EnrollmentType requested)
         {
+            if (requested == RequestUtilities.EnrollmentType.Reissue) return requested;
+
             try
             {
                 if (!productInfo.ProductParameters.TryGetValue("PriorCertSN", out var priorCertSn) ||
                     string.IsNullOrWhiteSpace(priorCertSn))
                 {
                     flow.Skip("EvaluateOrderValidity", "no PriorCertSN");
-                    return false;
+                    return requested;
                 }
 
-                var priorCert = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(priorCertSn));
+                var priorCert = FindCertificateBySerial(flow, certificateDataReader, priorCertSn);
                 var requestId = priorCert?.CARequestID;
                 if (string.IsNullOrEmpty(requestId) || requestId.Length < CscRequestIdLength)
                 {
                     flow.Skip("EvaluateOrderValidity", "prior certificate or its CA request ID not found");
-                    return false;
+                    return requested;
                 }
 
                 var uUId = requestId.Substring(0, CscRequestIdLength);
@@ -510,30 +509,75 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 if (TryParseCscDate(certificate?.OrderDate, out var orderDate))
                 {
                     var orderExpiry = orderDate.AddYears(1);
-                    var daysUntilOrderExpiry = (orderExpiry - DateTime.UtcNow).TotalDays;
-                    var reissue = daysUntilOrderExpiry > RenewalWindowDays;
+                    var daysLeft = (orderExpiry - DateTime.UtcNow).TotalDays;
+                    var resolved = daysLeft > RenewalWindowDays ? RequestUtilities.EnrollmentType.Reissue
+                        : daysLeft >= 0 ? RequestUtilities.EnrollmentType.Renew
+                        : RequestUtilities.EnrollmentType.New;
                     flow.Step("EvaluateOrderValidity",
-                        $"orderDate={certificate.OrderDate}, orderExpiry={orderExpiry:dd-MMM-yyyy}, daysLeft={(int) daysUntilOrderExpiry}, window={RenewalWindowDays}, reissue={reissue}");
-                    return reissue;
+                        $"orderDate={certificate.OrderDate}, orderExpiry={orderExpiry:dd-MMM-yyyy}, daysLeft={(int) daysLeft}, window={RenewalWindowDays}, result={resolved}");
+                    return resolved;
                 }
 
                 if (TryParseCscDate(certificate?.ExpirationDate, out var expirationDate))
                 {
-                    var reissue = expirationDate >= DateTime.UtcNow;
+                    var resolved = expirationDate >= DateTime.UtcNow ? RequestUtilities.EnrollmentType.Reissue : requested;
                     flow.Step("EvaluateOrderValidity",
-                        $"order date unavailable, using certificate expiration {certificate.ExpirationDate}, reissue={reissue}");
-                    return reissue;
+                        $"order date unavailable, using certificate expiration {certificate.ExpirationDate}, result={resolved}");
+                    return resolved;
                 }
 
                 flow.Skip("EvaluateOrderValidity", "neither order date nor expiration date available");
-                return false;
+                return requested;
             }
             catch (Exception e)
             {
                 flow.Fail("EvaluateOrderValidity", e.Message);
-                Logger.Warn($"Unable to determine order validity, proceeding with renewal: {e.Message}");
-                return false;
+                Logger.Warn($"Unable to evaluate the prior order, keeping requested type {requested}: {e.Message}");
+                return requested;
             }
+        }
+
+        /// <summary>
+        /// Looks up a certificate by serial number, tolerating the DER sign-padding byte. A serial whose first byte
+        /// is 0x80 or higher is stored with a leading 00 (for example 00B970...), but a request may carry it without.
+        /// </summary>
+        private CAConnectorCertificate FindCertificateBySerial(FlowLogger flow,
+            ICertificateDataReader certificateDataReader, string hexSerial)
+        {
+            var candidates = GetSerialNumberCandidates(hexSerial);
+            foreach (var candidate in candidates)
+            {
+                var record = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(candidate));
+                if (record == null) continue;
+
+                if (candidate != candidates[0])
+                    flow.Step("SerialNumberNormalized", $"matched with serial variant '{candidate}' (requested '{candidates[0]}')");
+                return record;
+            }
+
+            flow.Fail("LocatePriorCertificate", $"no certificate found for serial '{hexSerial}' or its leading-zero variants");
+            return null;
+        }
+
+        private static List<string> GetSerialNumberCandidates(string hexSerial)
+        {
+            var candidates = new List<string>();
+            var serial = (hexSerial ?? string.Empty).Trim();
+            if (serial.StartsWith("0x", StringComparison.OrdinalIgnoreCase)) serial = serial.Substring(2);
+            serial = serial.Replace(" ", string.Empty).Replace(":", string.Empty).ToUpperInvariant();
+            if (serial.Length == 0) return candidates;
+            if (serial.Length % 2 != 0) serial = "0" + serial;
+            candidates.Add(serial);
+
+            var stripped = serial;
+            while (stripped.Length > 2 && stripped.StartsWith("00", StringComparison.Ordinal))
+                stripped = stripped.Substring(2);
+            if (!candidates.Contains(stripped)) candidates.Add(stripped);
+
+            if (Convert.ToInt32(stripped.Substring(0, 2), 16) >= 0x80 && !candidates.Contains("00" + stripped))
+                candidates.Add("00" + stripped);
+
+            return candidates;
         }
 
         private static bool TryParseCscDate(string value, out DateTime date)
