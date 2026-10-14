@@ -21,6 +21,8 @@ namespace Keyfactor.AnyGateway.CscGlobal
 {
     public class CscGlobalCaProxy : BaseCAConnector
     {
+        private const int DefaultRenewalWindowDays = 30;
+        private int RenewalWindowDays { get; set; } = DefaultRenewalWindowDays;
         private readonly RequestManager _requestManager;
 
         public CscGlobalCaProxy()
@@ -206,6 +208,14 @@ namespace Keyfactor.AnyGateway.CscGlobal
             RenewalRequest renewRequest;
 
             string uUId;
+
+            // If the order is outside the renewal window, reissue under the active order instead of a paid renew
+            if (enrollmentType == RequestUtilities.EnrollmentType.Renew && ShouldReissueInsteadOfRenew(certificateDataReader, productInfo))
+            {
+                Logger.Trace("Order is outside the renewal window, switching Renew to Reissue");
+                enrollmentType = RequestUtilities.EnrollmentType.Reissue;
+            }
+
             switch (enrollmentType)
             {
                 case RequestUtilities.EnrollmentType.New:
@@ -289,6 +299,41 @@ namespace Keyfactor.AnyGateway.CscGlobal
         }
 
 
+        /// <summary>
+        /// Decides renew vs. reissue from the order's remaining validity (order date + 1 year) rather than the
+        /// certificate's own expiration, so shorter-lived certs under an active order are reissued, not renewed.
+        /// Returns true when the order is outside the renewal window (reissue). Falls back to the certificate's
+        /// expiration when the order date is unavailable, and to renewal if nothing can be determined.
+        /// </summary>
+        private bool ShouldReissueInsteadOfRenew(ICertificateDataReader certificateDataReader, EnrollmentProductInfo productInfo)
+        {
+            try
+            {
+                if (!productInfo.ProductParameters.TryGetValue("PriorCertSN", out var priorCertSn)) return false;
+
+                var priorCert = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(priorCertSn));
+                var uUId = priorCert?.CARequestID?.Substring(0, 36);
+                if (string.IsNullOrEmpty(uUId)) return false;
+
+                var certificate = Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(uUId)).Result;
+                if (DateTime.TryParse(certificate?.OrderDate, out var orderDate))
+                {
+                    var orderExpiry = orderDate.AddYears(1);
+                    var daysUntilOrderExpiry = (orderExpiry - DateTime.UtcNow).TotalDays;
+                    Logger.Trace($"Order {uUId}: orderDate={certificate.OrderDate}, expiry={orderExpiry:dd-MMM-yyyy}, daysLeft={(int)daysUntilOrderExpiry}, window={RenewalWindowDays}");
+                    return daysUntilOrderExpiry > RenewalWindowDays;
+                }
+
+                Logger.Trace("Order date unavailable, falling back to certificate expiration");
+                return DateTime.TryParse(certificate?.ExpirationDate, out var expirationDate) && expirationDate >= DateTime.Now;
+            }
+            catch (Exception e)
+            {
+                Logger.Warn($"Unable to determine order validity, proceeding with renewal: {e.Message}");
+                return false;
+            }
+        }
+
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
             try
@@ -335,6 +380,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CscGlobalClient = new CscGlobalClient(configProvider);
             var templateSync = configProvider.CAConnectionData["TemplateSync"].ToString();
             if (templateSync.ToUpper() == "ON") EnableTemplateSync = true;
+            if (configProvider.CAConnectionData.TryGetValue("RenewalWindowDays", out var renewalWindow) &&
+                int.TryParse(renewalWindow?.ToString(), out var renewalWindowDays) && renewalWindowDays > 0)
+                RenewalWindowDays = renewalWindowDays;
             Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
         }
 
