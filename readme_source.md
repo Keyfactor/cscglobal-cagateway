@@ -120,9 +120,23 @@ the CA.  Without the imported configuration, the service will fail to start.
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
     "ApiKey": "SALDJDSFKLDFS",
     "BearerToken": "ASDLKFSALDKSDALK",
-    "TemplateSync": "On"
+    "TemplateSync": "On",
+    "RenewalWindowDays": "30"
   }
 ```
+
+`RenewalWindowDays` is optional (default 30) and controls the renewal window described below.
+
+#### Renewal vs. Reissue Logic
+When Keyfactor Command submits a **Renew** request, the gateway decides whether a paid renewal is actually needed. The decision is based on the validity of the underlying CSC Global **order**, not the expiration of the certificate itself. This allows shorter-lived certificates (for example ~200 days) issued under a still-active order to be reissued at no cost.
+
+1. The order expiry is calculated as the order date of the prior certificate plus one year.
+2. If the days remaining until order expiry are **greater than** `RenewalWindowDays` (default 30), the request is processed as a **Reissue** under the active order.
+3. If the days remaining are **less than or equal to** `RenewalWindowDays`, the request is processed as a paid **Renewal** (new order).
+4. If CSC Global does not return an order date, the certificate's own expiration date is used instead: an unexpired certificate is reissued, an expired one is renewed.
+5. If the order cannot be looked up, the request is processed as a normal **Renewal**.
+
+Example with the default of 30 days: an order placed on 1-Jan-2026 expires 1-Jan-2027. A renew request on 1-Aug-2026 is a reissue. A renew request on 15-Dec-2026 is a paid renewal.
 
 **Template Settings**
 - For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.

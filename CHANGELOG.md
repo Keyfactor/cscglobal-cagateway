@@ -1,3 +1,6 @@
+v1.2.1
+- Renew requests are reissued under the active order when the order is outside the renewal window (RenewalWindowDays, default 30), supporting shorter-lived (~200 day) certificates
+
 v1.2.0
 - Incremental Sync Support with effectiveDate within last 5 days
 
