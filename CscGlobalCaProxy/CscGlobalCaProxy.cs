@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -22,7 +24,26 @@ namespace Keyfactor.AnyGateway.CscGlobal
     public class CscGlobalCaProxy : BaseCAConnector
     {
         private const int DefaultRenewalWindowDays = 30;
-        private int RenewalWindowDays { get; set; } = DefaultRenewalWindowDays;
+        private const int CscRequestIdLength = 36; //CARequestID starts with the certificate UUID (a GUID)
+        private const int FailedStatus = 30;
+
+        //Parameters every registration/renewal/reissue request reads from the product parameters
+        private static readonly string[] RequiredEnrollmentParameters =
+        {
+            "Term",
+            "Applicant First Name",
+            "Applicant Last Name",
+            "Applicant Email Address",
+            "Applicant Phone (+nn.nnnnnnnn)",
+            "Organization Contact",
+            "Business Unit",
+            "Domain Control Validation Method",
+            "CN DCV Email (admin@yourdomain.com)",
+            "Notification Email(s) Comma Separated"
+        };
+
+        private static readonly string[] CscDateFormats = {"dd-MMM-yyyy", "d-MMM-yyyy"};
+
         private readonly RequestManager _requestManager;
 
         public CscGlobalCaProxy()
@@ -30,40 +51,75 @@ namespace Keyfactor.AnyGateway.CscGlobal
             _requestManager = new RequestManager();
         }
 
+        private int RenewalWindowDays { get; set; } = DefaultRenewalWindowDays;
         private ICscGlobalClient CscGlobalClient { get; set; }
         public bool EnableTemplateSync { get; set; }
 
+        private FlowLogger NewFlow(string name)
+        {
+            return new FlowLogger(message => Logger.Trace(message), name);
+        }
+
+        private static T RunSync<T>(Func<Task<T>> operation)
+        {
+            //GetAwaiter().GetResult() surfaces the real exception instead of an AggregateException
+            return Task.Run(operation).GetAwaiter().GetResult();
+        }
+
+        private static EnrollmentResult Failure(string message)
+        {
+            return new EnrollmentResult
+            {
+                Status = FailedStatus,
+                StatusMessage = message
+            };
+        }
+
         public override int Revoke(string caRequestId, string hexSerialNumber, uint revocationReason)
         {
-
-            try
+            using (var flow = NewFlow("Revoke"))
             {
-                Logger.Trace($"Staring Revoke Method");
-                var revokeResponse =
-                    Task.Run(async () =>
-                            await CscGlobalClient.SubmitRevokeCertificateAsync(caRequestId.Substring(0, 36)))
-                        .Result; //todo fix to use pipe delimiter
-
-                Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
-                var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
-
-                if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED))
+                try
                 {
-                    if (!string.IsNullOrEmpty(revokeResponse?.RegistrationError?.Description))
+                    Logger.Trace("Starting Revoke Method");
+                    if (string.IsNullOrEmpty(caRequestId) || caRequestId.Length < CscRequestIdLength)
+                        throw new ArgumentException(
+                            $"The CA request ID '{caRequestId}' is not valid. Expected it to start with the {CscRequestIdLength} character certificate UUID.");
+
+                    var uuid = caRequestId.Substring(0, CscRequestIdLength); //todo fix to use pipe delimiter
+                    flow.Step("ParseCaRequestId", $"uuid={uuid}");
+
+                    var revokeResponse = flow.Step("SubmitRevokeToCsc",
+                        () => RunSync(() => CscGlobalClient.SubmitRevokeCertificateAsync(uuid)));
+                    Logger.Trace($"Revoke Response JSON: {JsonConvert.SerializeObject(revokeResponse)}");
+
+                    var revokeResult = _requestManager.GetRevokeResult(revokeResponse);
+                    flow.Step("MapRevokeResult", $"status={revokeResult}");
+
+                    if (revokeResult == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.FAILED) &&
+                        !string.IsNullOrEmpty(revokeResponse?.RegistrationError?.Description))
                     {
-                        throw new UnsuccessfulRequestException($"Revoke Failed with message {revokeResponse?.RegistrationError?.Description}", 30);
+                        flow.Fail("RevokeRejectedByCsc", revokeResponse.RegistrationError.Description);
+                        throw new UnsuccessfulRequestException(
+                            $"Revoke Failed with message {revokeResponse.RegistrationError.Description}", 30);
                     }
+
+                    return revokeResult;
                 }
-
-                return revokeResult;
+                catch (UnsuccessfulRequestException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error($"Revoke failed: {LogHandler.FlattenException(e)}");
+                    throw new Exception($"Revoke Failed with message {e.Message}", e);
+                }
+                finally
+                {
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                }
             }
-            catch(Exception e)
-            {
-                throw new Exception($"Revoke Failed with message {e?.Message}");
-            }
-
         }
 
         [Obsolete]
@@ -79,78 +135,114 @@ namespace Keyfactor.AnyGateway.CscGlobal
             CertificateAuthoritySyncInfo certificateAuthoritySyncInfo,
             CancellationToken cancelToken)
         {
-            Logger.Trace($"Full Sync? {certificateAuthoritySyncInfo.DoFullSync}");
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            try
+            using (var flow = NewFlow("Synchronize"))
             {
-                CertificateListResponse certs;
-
-                if (certificateAuthoritySyncInfo.DoFullSync)
+                try
                 {
-                    Logger.Trace("Performing Full Sync");
-                    certs = Task.Run(async () => await CscGlobalClient.SubmitCertificateListRequestAsync()).Result;
-                }
-                else
-                {
-                    // Incremental sync - get certificates from the last X days (default 5)
-                    var effectiveDate = DateTime.Now.AddDays(-Constants.IncrementalSyncDays);
-                    Logger.Trace($"Performing Incremental Sync with effectiveDate: {effectiveDate:yyyy/MM/dd}");
-                    certs = Task.Run(async () => await CscGlobalClient.SubmitIncrementalCertificateListRequestAsync(effectiveDate)).Result;
-                }
+                    var fullSync = certificateAuthoritySyncInfo?.DoFullSync ?? true;
+                    Logger.Trace($"Full Sync? {fullSync}");
 
-                foreach (var currentResponseItem in certs.Results)
-                {
-
-                    cancelToken.ThrowIfCancellationRequested();
-                    Logger.Trace($"Took Certificate ID {currentResponseItem?.Uuid} from Queue");
-                    var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
-
-                    //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
-                    if (certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) ||
-                        certStatus == Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
+                    CertificateListResponse certs;
+                    if (fullSync)
                     {
-                        //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
-                        var productId = "CscGlobal";
-                        if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+                        flow.Step("SelectSyncMode", "full");
+                        certs = flow.Step("FetchCertificateList",
+                            () => RunSync(() => CscGlobalClient.SubmitCertificateListRequestAsync()));
+                    }
+                    else
+                    {
+                        // Incremental sync - get certificates from the last X days (default 5)
+                        var effectiveDate = DateTime.Now.AddDays(-Constants.IncrementalSyncDays);
+                        flow.Step("SelectSyncMode", $"incremental, effectiveDate={effectiveDate:yyyy/MM/dd}");
+                        certs = flow.Step("FetchCertificateList",
+                            () => RunSync(() => CscGlobalClient.SubmitIncrementalCertificateListRequestAsync(effectiveDate)));
+                    }
 
-                        var fileContent =
-                            Encoding.ASCII.GetString(
-                                Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
+                    var results = certs?.Results ?? new List<CertificateResponse>();
+                    flow.Step("ReceivedCertificates", $"count={results.Count}");
 
-                        if (fileContent.Length > 0)
+                    int added = 0, skipped = 0, failed = 0;
+                    foreach (var currentResponseItem in results)
+                    {
+                        cancelToken.ThrowIfCancellationRequested();
+                        var uuid = currentResponseItem?.Uuid;
+                        try
                         {
-                            Logger.Trace($"File Content {fileContent}");
-                            var certData = fileContent.Replace("\r\n", string.Empty);
-                            var certString = GetEndEntityCertificate(certData);
-                            var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(certString));
+                            Logger.Trace($"Took Certificate ID {uuid} from Queue");
+                            var certStatus = _requestManager.MapReturnStatus(currentResponseItem?.Status);
 
-                            if (certString.Length > 0)
+                            //Keyfactor sync only seems to work when there is a valid cert and I can only get Active valid certs from Csc Global
+                            if (certStatus != Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.ISSUED) &&
+                                certStatus != Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.REVOKED))
                             {
-                                blockingBuffer.Add(new CAConnectorCertificate
-                                {
-                                    CARequestID = $"{currentResponseItem?.Uuid}",
-                                    Certificate = certString,
-                                    SubmissionDate = currentResponseItem?.OrderDate == null
-                                        ? Convert.ToDateTime(currentCert.NotBefore)
-                                        : Convert.ToDateTime(currentResponseItem.OrderDate),
-                                    Status = certStatus,
-                                    ProductID = productId
-                                }, cancelToken);
+                                Logger.Trace($"Skipping {uuid}: status '{currentResponseItem?.Status}' is not issued or revoked");
+                                skipped++;
+                                continue;
                             }
+
+                            //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
+                            var productId = "CscGlobal";
+                            if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+
+                            var fileContent =
+                                Encoding.ASCII.GetString(
+                                    Convert.FromBase64String(currentResponseItem?.Certificate ?? string.Empty));
+                            if (fileContent.Length == 0)
+                            {
+                                Logger.Trace($"Skipping {uuid}: no certificate content returned");
+                                skipped++;
+                                continue;
+                            }
+
+                            Logger.Trace($"File Content {fileContent}");
+                            var certString = GetEndEntityCertificate(fileContent.Replace("\r\n", string.Empty));
+                            if (string.IsNullOrEmpty(certString))
+                            {
+                                Logger.Trace($"Skipping {uuid}: no end entity certificate found");
+                                skipped++;
+                                continue;
+                            }
+
+                            var currentCert = new X509Certificate2(Encoding.ASCII.GetBytes(certString));
+                            blockingBuffer.Add(new CAConnectorCertificate
+                            {
+                                CARequestID = $"{uuid}",
+                                Certificate = certString,
+                                SubmissionDate = currentResponseItem?.OrderDate == null
+                                    ? Convert.ToDateTime(currentCert.NotBefore)
+                                    : Convert.ToDateTime(currentResponseItem.OrderDate),
+                                Status = certStatus,
+                                ProductID = productId
+                            }, cancelToken);
+                            added++;
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
+                        catch (Exception e)
+                        {
+                            //One bad certificate should not abort the whole sync
+                            failed++;
+                            Logger.Error($"Failed to process certificate {uuid} during sync, continuing: {LogHandler.FlattenException(e)}");
                         }
                     }
-                }
-                blockingBuffer.CompleteAdding();
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"Csc Global Synchronize Task failed! {LogHandler.FlattenException(e)}");
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                blockingBuffer.CompleteAdding();
-                throw;
-            }
 
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                    flow.Step("ProcessCertificates", $"added={added}, skipped={skipped}, failed={failed}");
+                }
+                catch (Exception e)
+                {
+                    flow.Fail("Synchronize", e.Message);
+                    Logger.Error($"Csc Global Synchronize Task failed! {LogHandler.FlattenException(e)}");
+                    throw;
+                }
+                finally
+                {
+                    blockingBuffer.CompleteAdding();
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                }
+            }
         }
 
         private string GetEndEntityCertificate(string certData)
@@ -158,7 +250,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             var splitCerts =
                 certData.Split(new[] {"-----END CERTIFICATE-----", "-----BEGIN CERTIFICATE-----"},
                     StringSplitOptions.RemoveEmptyEntries);
-            
+
             X509Certificate2Collection col = new X509Certificate2Collection();
             foreach (var cert in splitCerts)
             {
@@ -184,7 +276,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
             }
 
             Logger.Trace($"Got certificate {certString}");
-            
+
             return certString;
         }
 
@@ -201,103 +293,189 @@ namespace Keyfactor.AnyGateway.CscGlobal
             PKIConstants.X509.RequestFormat requestFormat, RequestUtilities.EnrollmentType enrollmentType)
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            using (var flow = NewFlow($"Enroll-{enrollmentType}"))
+            {
+                try
+                {
+                    return EnrollInternal(flow, certificateDataReader, csr, san, productInfo, enrollmentType);
+                }
+                catch (Exception e)
+                {
+                    flow.Fail("Enroll", e.Message);
+                    Logger.Error($"Enrollment ({enrollmentType}) failed: {LogHandler.FlattenException(e)}");
+                    return Failure($"{enrollmentType} failed: {e.Message}");
+                }
+                finally
+                {
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                }
+            }
+        }
 
-            RegistrationRequest enrollmentRequest;
-            CAConnectorCertificate priorCert;
-            ReissueRequest reissueRequest;
-            RenewalRequest renewRequest;
+        private EnrollmentResult EnrollInternal(FlowLogger flow, ICertificateDataReader certificateDataReader,
+            string csr, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo,
+            RequestUtilities.EnrollmentType enrollmentType)
+        {
+            if (productInfo?.ProductParameters == null)
+            {
+                flow.Fail("ValidateInput", "no product parameters supplied");
+                return Failure("The enrollment request did not include any product parameters.");
+            }
 
-            string uUId;
+            if (string.IsNullOrWhiteSpace(csr))
+            {
+                flow.Fail("ValidateInput", "no CSR supplied");
+                return Failure("The enrollment request did not include a certificate signing request (CSR).");
+            }
+
+            flow.Step("ValidateInput", $"product={productInfo.ProductID}, hasPriorCert={productInfo.ProductParameters.ContainsKey("PriorCertSN")}");
 
             // If the order is outside the renewal window, reissue under the active order instead of a paid renew
-            if (enrollmentType == RequestUtilities.EnrollmentType.Renew && ShouldReissueInsteadOfRenew(certificateDataReader, productInfo))
+            if (enrollmentType == RequestUtilities.EnrollmentType.Renew)
             {
-                Logger.Trace("Order is outside the renewal window, switching Renew to Reissue");
-                enrollmentType = RequestUtilities.EnrollmentType.Reissue;
+                if (ShouldReissueInsteadOfRenew(flow, certificateDataReader, productInfo))
+                {
+                    flow.Step("RenewalDecision", "REISSUE (order outside renewal window)");
+                    enrollmentType = RequestUtilities.EnrollmentType.Reissue;
+                }
+                else
+                {
+                    flow.Step("RenewalDecision", "RENEWAL (paid order)");
+                }
             }
 
             switch (enrollmentType)
             {
                 case RequestUtilities.EnrollmentType.New:
-                    Logger.Trace($"Entering New Enrollment");
-                    //If they renewed an expired cert it gets here and this will not be supported
-                    IRegistrationResponse enrollmentResponse;
-                    if (!productInfo.ProductParameters.ContainsKey("PriorCertSN"))
-                    {
-                        enrollmentRequest = _requestManager.GetRegistrationRequest(productInfo, csr, san);
-                        Logger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
-                        enrollmentResponse =
-                            Task.Run(async () => await CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest))
-                                .Result;
-                        Logger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
-                    }
-                    else
-                    {
-                        return new EnrollmentResult
-                        {
-                            Status = 30, //failure
-                            StatusMessage = "You cannot renew and expired cert please perform an new enrollment."
-                        };
-                    }
-                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                    return _requestManager.GetEnrollmentResult(enrollmentResponse);
+                    return EnrollNew(flow, csr, san, productInfo);
                 case RequestUtilities.EnrollmentType.Renew:
-                    Logger.Trace($"Entering Renew Enrollment");
-                    //One click won't work for this implementation b/c we are missing enrollment params
-                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name"))
-                    {
-                        priorCert = certificateDataReader.GetCertificateRecord(
-                            DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
-                        uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                        Logger.Trace($"Renew uUId: {uUId}");
-                        renewRequest = _requestManager.GetRenewalRequest(productInfo, uUId, csr, san);
-                        Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
-                        var renewResponse = Task.Run(async () => await CscGlobalClient.SubmitRenewalAsync(renewRequest))
-                            .Result;
-                        Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
-                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                        return _requestManager.GetRenewResponse(renewResponse);
-                    }
-                    else
-                    {
-                        return new EnrollmentResult
-                        {
-                            Status = 30, //failure
-                            StatusMessage = "One click Renew Is Not Available for this Certificate Type.  Use the configure button instead."
-                        };
-                    }
-
-
+                    return EnrollRenew(flow, certificateDataReader, csr, san, productInfo);
                 case RequestUtilities.EnrollmentType.Reissue:
-                    Logger.Trace($"Entering Reissue Enrollment");
-                    //One click won't work for this implementation b/c we are missing enrollment params
-                    if (productInfo.ProductParameters.ContainsKey("Applicant Last Name"))
-                    {
-                        priorCert = certificateDataReader.GetCertificateRecord(
-                        DataConversion.HexToBytes(productInfo.ProductParameters["PriorCertSN"]));
-                        uUId = priorCert.CARequestID.Substring(0, 36); //uUId is a GUID
-                        Logger.Trace($"Reissue uUId: {uUId}");
-                        reissueRequest = _requestManager.GetReissueRequest(productInfo, uUId, csr, san);
-                        Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
-                        var reissueResponse = Task.Run(async () => await CscGlobalClient.SubmitReissueAsync(reissueRequest))
-                            .Result;
-                        Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
-                        Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-                        return _requestManager.GetReIssueResult(reissueResponse);
-                    }
-                    else
-                    {
-                        return new EnrollmentResult
-                        {
-                            Status = 30, //failure
-                            StatusMessage = "One click Renew Is Not Available for this Certificate Type.  Use the configure button instead."
-                        };
-                    }
+                    return EnrollReissue(flow, certificateDataReader, csr, san, productInfo);
+                default:
+                    flow.Fail("SelectPath", $"unsupported enrollment type {enrollmentType}");
+                    return Failure($"The enrollment type '{enrollmentType}' is not supported by the CSC Global gateway.");
             }
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-            return null;
         }
 
+        private EnrollmentResult EnrollNew(FlowLogger flow, string csr, Dictionary<string, string[]> san,
+            EnrollmentProductInfo productInfo)
+        {
+            flow.Step("SelectPath", "New");
+
+            //A renewal of an expired certificate reaches here as a New enrollment carrying PriorCertSN. CSC has no
+            //order to renew in that case, so it is simply ordered as a new certificate.
+            if (productInfo.ProductParameters.ContainsKey("PriorCertSN"))
+                flow.Step("PriorCertIgnored", "expired certificate renewal is ordered as a new certificate");
+
+            var missing = ValidateRequiredParameters(flow, productInfo);
+            if (missing != null) return Failure(missing);
+
+            var enrollmentRequest = flow.Step("BuildRegistrationRequest",
+                () => _requestManager.GetRegistrationRequest(productInfo, csr, san));
+            Logger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
+
+            var enrollmentResponse = flow.Step("SubmitRegistrationToCsc",
+                () => RunSync(() => CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest)));
+            if (enrollmentResponse == null)
+                throw new InvalidOperationException("CSC Global returned an empty response to the registration request.");
+            Logger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
+
+            var result = _requestManager.GetEnrollmentResult(enrollmentResponse);
+            flow.Step("MapEnrollmentResult", $"status={result?.Status}");
+            return result;
+        }
+
+        private EnrollmentResult EnrollRenew(FlowLogger flow, ICertificateDataReader certificateDataReader,
+            string csr, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo)
+        {
+            flow.Step("SelectPath", "Renew");
+
+            var missing = ValidateRequiredParameters(flow, productInfo, true);
+            if (missing != null) return Failure(missing);
+
+            var uUId = GetPriorCertificateUuid(flow, certificateDataReader, productInfo);
+            var renewRequest = flow.Step("BuildRenewalRequest",
+                () => _requestManager.GetRenewalRequest(productInfo, uUId, csr, san));
+            Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
+
+            var renewResponse = flow.Step("SubmitRenewalToCsc",
+                () => RunSync(() => CscGlobalClient.SubmitRenewalAsync(renewRequest)));
+            if (renewResponse == null)
+                throw new InvalidOperationException("CSC Global returned an empty response to the renewal request.");
+            Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
+
+            var result = _requestManager.GetRenewResponse(renewResponse);
+            flow.Step("MapRenewalResult", $"status={result?.Status}");
+            return result;
+        }
+
+        private EnrollmentResult EnrollReissue(FlowLogger flow, ICertificateDataReader certificateDataReader,
+            string csr, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo)
+        {
+            flow.Step("SelectPath", "Reissue");
+
+            var missing = ValidateRequiredParameters(flow, productInfo, true);
+            if (missing != null) return Failure(missing);
+
+            var uUId = GetPriorCertificateUuid(flow, certificateDataReader, productInfo);
+            var reissueRequest = flow.Step("BuildReissueRequest",
+                () => _requestManager.GetReissueRequest(productInfo, uUId, csr, san));
+            Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
+
+            var reissueResponse = flow.Step("SubmitReissueToCsc",
+                () => RunSync(() => CscGlobalClient.SubmitReissueAsync(reissueRequest)));
+            if (reissueResponse == null)
+                throw new InvalidOperationException("CSC Global returned an empty response to the reissue request.");
+            Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
+
+            var result = _requestManager.GetReIssueResult(reissueResponse);
+            flow.Step("MapReissueResult", $"status={result?.Status}");
+            return result;
+        }
+
+        /// <summary>
+        /// Returns a failure message when required enrollment parameters are missing, otherwise null.
+        /// </summary>
+        private string ValidateRequiredParameters(FlowLogger flow, EnrollmentProductInfo productInfo, bool priorCertRequired = false)
+        {
+            var parameters = productInfo.ProductParameters;
+            var missing = RequiredEnrollmentParameters
+                .Where(name => !parameters.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
+                .ToList();
+
+            if (missing.Count == 0)
+            {
+                flow.Step("ValidateParameters");
+                return null;
+            }
+
+            flow.Fail("ValidateParameters", $"missing: {string.Join(", ", missing)}");
+            var message = $"The enrollment request is missing required parameter(s): {string.Join(", ", missing)}.";
+            if (priorCertRequired)
+                message += " One-click renew/reissue does not supply these fields for this certificate type; use the configure option to provide them.";
+            return message;
+        }
+
+        private string GetPriorCertificateUuid(FlowLogger flow, ICertificateDataReader certificateDataReader,
+            EnrollmentProductInfo productInfo)
+        {
+            if (!productInfo.ProductParameters.TryGetValue("PriorCertSN", out var priorCertSn) ||
+                string.IsNullOrWhiteSpace(priorCertSn))
+                throw new InvalidOperationException("The request does not identify the prior certificate (PriorCertSN is missing).");
+
+            var priorCert = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(priorCertSn));
+            if (priorCert == null)
+                throw new InvalidOperationException($"The prior certificate with serial number '{priorCertSn}' was not found in the gateway database.");
+
+            var requestId = priorCert.CARequestID;
+            if (string.IsNullOrEmpty(requestId) || requestId.Length < CscRequestIdLength)
+                throw new InvalidOperationException($"The prior certificate's CA request ID '{requestId}' is not a valid CSC Global certificate ID.");
+
+            var uUId = requestId.Substring(0, CscRequestIdLength); //uUId is a GUID
+            flow.Step("ResolvePriorCertificate", $"uuid={uUId}");
+            return uUId;
+        }
 
         /// <summary>
         /// Decides renew vs. reissue from the order's remaining validity (order date + 1 year) rather than the
@@ -305,85 +483,162 @@ namespace Keyfactor.AnyGateway.CscGlobal
         /// Returns true when the order is outside the renewal window (reissue). Falls back to the certificate's
         /// expiration when the order date is unavailable, and to renewal if nothing can be determined.
         /// </summary>
-        private bool ShouldReissueInsteadOfRenew(ICertificateDataReader certificateDataReader, EnrollmentProductInfo productInfo)
+        private bool ShouldReissueInsteadOfRenew(FlowLogger flow, ICertificateDataReader certificateDataReader,
+            EnrollmentProductInfo productInfo)
         {
             try
             {
-                if (!productInfo.ProductParameters.TryGetValue("PriorCertSN", out var priorCertSn)) return false;
+                if (!productInfo.ProductParameters.TryGetValue("PriorCertSN", out var priorCertSn) ||
+                    string.IsNullOrWhiteSpace(priorCertSn))
+                {
+                    flow.Skip("EvaluateOrderValidity", "no PriorCertSN");
+                    return false;
+                }
 
                 var priorCert = certificateDataReader.GetCertificateRecord(DataConversion.HexToBytes(priorCertSn));
-                var uUId = priorCert?.CARequestID?.Substring(0, 36);
-                if (string.IsNullOrEmpty(uUId)) return false;
+                var requestId = priorCert?.CARequestID;
+                if (string.IsNullOrEmpty(requestId) || requestId.Length < CscRequestIdLength)
+                {
+                    flow.Skip("EvaluateOrderValidity", "prior certificate or its CA request ID not found");
+                    return false;
+                }
 
-                var certificate = Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(uUId)).Result;
-                if (DateTime.TryParse(certificate?.OrderDate, out var orderDate))
+                var uUId = requestId.Substring(0, CscRequestIdLength);
+                var certificate = flow.Step("FetchLiveCertificate",
+                    () => RunSync(() => CscGlobalClient.SubmitGetCertificateAsync(uUId)), $"uuid={uUId}");
+
+                if (TryParseCscDate(certificate?.OrderDate, out var orderDate))
                 {
                     var orderExpiry = orderDate.AddYears(1);
                     var daysUntilOrderExpiry = (orderExpiry - DateTime.UtcNow).TotalDays;
-                    Logger.Trace($"Order {uUId}: orderDate={certificate.OrderDate}, expiry={orderExpiry:dd-MMM-yyyy}, daysLeft={(int)daysUntilOrderExpiry}, window={RenewalWindowDays}");
-                    return daysUntilOrderExpiry > RenewalWindowDays;
+                    var reissue = daysUntilOrderExpiry > RenewalWindowDays;
+                    flow.Step("EvaluateOrderValidity",
+                        $"orderDate={certificate.OrderDate}, orderExpiry={orderExpiry:dd-MMM-yyyy}, daysLeft={(int) daysUntilOrderExpiry}, window={RenewalWindowDays}, reissue={reissue}");
+                    return reissue;
                 }
 
-                Logger.Trace("Order date unavailable, falling back to certificate expiration");
-                return DateTime.TryParse(certificate?.ExpirationDate, out var expirationDate) && expirationDate >= DateTime.Now;
+                if (TryParseCscDate(certificate?.ExpirationDate, out var expirationDate))
+                {
+                    var reissue = expirationDate >= DateTime.UtcNow;
+                    flow.Step("EvaluateOrderValidity",
+                        $"order date unavailable, using certificate expiration {certificate.ExpirationDate}, reissue={reissue}");
+                    return reissue;
+                }
+
+                flow.Skip("EvaluateOrderValidity", "neither order date nor expiration date available");
+                return false;
             }
             catch (Exception e)
             {
+                flow.Fail("EvaluateOrderValidity", e.Message);
                 Logger.Warn($"Unable to determine order validity, proceeding with renewal: {e.Message}");
                 return false;
             }
         }
 
+        private static bool TryParseCscDate(string value, out DateTime date)
+        {
+            const DateTimeStyles styles = DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal;
+            if (DateTime.TryParseExact(value, CscDateFormats, CultureInfo.InvariantCulture, styles, out date))
+                return true;
+            return DateTime.TryParse(value, CultureInfo.InvariantCulture, styles, out date);
+        }
+
         public override CAConnectorCertificate GetSingleRecord(string caRequestId)
         {
-            try
+            Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
+            using (var flow = NewFlow("GetSingleRecord"))
             {
-                Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-                var keyfactorCaId = caRequestId?.Substring(0, 36); //todo fix to use pipe delimiter
-                Logger.Trace($"Keyfactor Ca Id: {keyfactorCaId}");
-                var certificateResponse =
-                    Task.Run(async () => await CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId))
-                        .Result;
-                
-                Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
-
-                var fileContent =
-                    Encoding.ASCII.GetString(
-                        Convert.FromBase64String(certificateResponse?.Certificate ?? string.Empty));
-
-                Logger.Trace($"File Content {fileContent}");
-                var certData = fileContent?.Replace("\r\n", string.Empty);
-                var certString = String.Empty;
-                if (!string.IsNullOrEmpty(certData))
-                    certString = GetEndEntityCertificate(certData);
-                Logger.Trace($"Cert String Content {certString}");
-
-                Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
-
-                return new CAConnectorCertificate
+                try
                 {
-                    CARequestID = keyfactorCaId,
-                    Certificate = certString,
-                    Status = _requestManager.MapReturnStatus(certificateResponse?.Status),
-                    SubmissionDate = Convert.ToDateTime(certificateResponse?.OrderDate)
-                };
-            }
-            catch(Exception e)
-            {
-                throw new Exception($"Error Occurred getting single cert {e.Message}");
+                    if (string.IsNullOrEmpty(caRequestId) || caRequestId.Length < CscRequestIdLength)
+                        throw new ArgumentException(
+                            $"The CA request ID '{caRequestId}' is not valid. Expected it to start with the {CscRequestIdLength} character certificate UUID.");
+
+                    var keyfactorCaId = caRequestId.Substring(0, CscRequestIdLength); //todo fix to use pipe delimiter
+                    flow.Step("ParseCaRequestId", $"uuid={keyfactorCaId}");
+
+                    var certificateResponse = flow.Step("FetchCertificateFromCsc",
+                        () => RunSync(() => CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId)));
+                    Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
+
+                    var fileContent =
+                        Encoding.ASCII.GetString(
+                            Convert.FromBase64String(certificateResponse?.Certificate ?? string.Empty));
+
+                    Logger.Trace($"File Content {fileContent}");
+                    var certData = fileContent.Replace("\r\n", string.Empty);
+                    var certString = string.Empty;
+                    if (!string.IsNullOrEmpty(certData))
+                        certString = flow.Step("ExtractEndEntityCertificate", () => GetEndEntityCertificate(certData));
+                    else
+                        flow.Skip("ExtractEndEntityCertificate", "no certificate content returned");
+                    Logger.Trace($"Cert String Content {certString}");
+
+                    return new CAConnectorCertificate
+                    {
+                        CARequestID = keyfactorCaId,
+                        Certificate = certString,
+                        Status = _requestManager.MapReturnStatus(certificateResponse?.Status),
+                        SubmissionDate = Convert.ToDateTime(certificateResponse?.OrderDate)
+                    };
+                }
+                catch (Exception e)
+                {
+                    flow.Fail("GetSingleRecord", e.Message);
+                    Logger.Error($"Error getting single record: {LogHandler.FlattenException(e)}");
+                    throw new Exception($"Error Occurred getting single cert {e.Message}", e);
+                }
+                finally
+                {
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                }
             }
         }
 
         public override void Initialize(ICAConnectorConfigProvider configProvider)
         {
             Logger.MethodEntry(ILogExtensions.MethodLogLevel.Debug);
-            CscGlobalClient = new CscGlobalClient(configProvider);
-            var templateSync = configProvider.CAConnectionData["TemplateSync"].ToString();
-            if (templateSync.ToUpper() == "ON") EnableTemplateSync = true;
-            if (configProvider.CAConnectionData.TryGetValue("RenewalWindowDays", out var renewalWindow) &&
-                int.TryParse(renewalWindow?.ToString(), out var renewalWindowDays) && renewalWindowDays > 0)
-                RenewalWindowDays = renewalWindowDays;
-            Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+            using (var flow = NewFlow("Initialize"))
+            {
+                try
+                {
+                    var connectionData = configProvider?.CAConnectionData
+                                         ?? throw new InvalidOperationException("The CA connection configuration is missing.");
+
+                    CscGlobalClient = flow.Step("CreateClient", () => new CscGlobalClient(configProvider));
+
+                    EnableTemplateSync = connectionData.TryGetValue("TemplateSync", out var templateSync) &&
+                                         string.Equals(templateSync?.ToString(), "ON", StringComparison.OrdinalIgnoreCase);
+                    flow.Step("ReadTemplateSync", $"enabled={EnableTemplateSync}");
+
+                    RenewalWindowDays = DefaultRenewalWindowDays;
+                    if (connectionData.TryGetValue("RenewalWindowDays", out var renewalWindow))
+                    {
+                        if (int.TryParse(renewalWindow?.ToString(), out var renewalWindowDays) && renewalWindowDays > 0)
+                        {
+                            RenewalWindowDays = renewalWindowDays;
+                        }
+                        else
+                        {
+                            Logger.Warn($"RenewalWindowDays value '{renewalWindow}' could not be parsed or was <= 0, using default {DefaultRenewalWindowDays}.");
+                            flow.Fail("ReadRenewalWindowDays", $"invalid value, using default {DefaultRenewalWindowDays}");
+                        }
+                    }
+
+                    flow.Step("ReadRenewalWindowDays", $"days={RenewalWindowDays}");
+                }
+                catch (Exception e)
+                {
+                    flow.Fail("Initialize", e.Message);
+                    Logger.Error($"Initialization failed: {LogHandler.FlattenException(e)}");
+                    throw;
+                }
+                finally
+                {
+                    Logger.MethodExit(ILogExtensions.MethodLogLevel.Debug);
+                }
+            }
         }
 
         public override void Ping()

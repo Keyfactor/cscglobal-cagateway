@@ -1,5 +1,8 @@
 v1.2.1
 - Renew requests are reissued under the active order when the order is outside the renewal window (RenewalWindowDays, default 30), supporting shorter-lived (~200 day) certificates
+- Added FlowLogger step diagrams to the Trace log for Enroll, Synchronize, Revoke, GetSingleRecord and Initialize
+- Removed the 'cannot renew an expired cert' failure; renewing an expired certificate is now ordered as a new certificate
+- Hardening: validate required enrollment parameters and prior certificate before calling CSC, clearer error messages, null response checks, culture-safe date parsing, per-certificate error isolation during sync, original exceptions preserved
 
 v1.2.0
 - Incremental Sync Support with effectiveDate within last 5 days
