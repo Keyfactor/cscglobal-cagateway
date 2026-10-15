@@ -120,10 +120,24 @@ the CA.  Without the imported configuration, the service will fail to start.
     "CscGlobalURL": "https://apis-ote.cscglobal.com/dbs/api/v2",
     "ApiKey": "SALDJDSFKLDFS",
     "BearerToken": "ASDLKFSALDKSDALK",
-    "TemplateSync": "On"
+    "TemplateSync": "On",
+    "RenewalWindowDays": "30"
   }
 ```
 
+`RenewalWindowDays` is optional (default 30) and controls the renewal window described below.
+
+#### Renewal vs. Reissue Logic
+When Keyfactor Command submits a **New**, **Renew** or **Reissue** request that identifies a prior certificate, the gateway decides what to order based on the validity of the underlying CSC Global **order**, not the expiration of the certificate itself. This allows shorter-lived certificates (for example ~200 days) issued under a still-active order to be reissued at no cost, and lets renewals of an already expired certificate proceed instead of failing.
+
+1. The order expiry is calculated as the order date of the prior certificate plus one year.
+2. If the days remaining until order expiry are **greater than** `RenewalWindowDays` (default 30), the request is processed as a **Reissue** under the active order.
+3. If the order has between 0 and `RenewalWindowDays` days remaining, the request is processed as a paid **Renewal** (new order).
+4. If the order has already expired, a new certificate is ordered (**New**).
+5. If CSC Global does not return an order date, the certificate's own expiration date is used instead: an unexpired certificate is reissued.
+6. A request that explicitly asks for a **Reissue** is always processed as a reissue. If the prior certificate cannot be found or evaluated, the requested type is kept. Serial numbers are matched with or without the leading `00` sign byte.
+
+Example with the default of 30 days: an order placed on 1-Jan-2026 expires 1-Jan-2027. A request on 1-Aug-2026 is a reissue, a request on 15-Dec-2026 is a paid renewal, and a request after 1-Jan-2027 orders a new certificate.
 **Template Settings**
 - For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
 ```
