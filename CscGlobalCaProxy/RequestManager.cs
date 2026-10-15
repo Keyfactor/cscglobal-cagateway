@@ -19,6 +19,22 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return customFieldList;
         }
 
+        /// <summary>
+        /// Turns an error returned by CSC Global into a message that tells the user what to do next.
+        /// </summary>
+        private static string DescribeError(IRegistrationError error)
+        {
+            if (error == null) return null;
+
+            if (string.Equals(error.Code, "OPEN_ORDER_INPROGRESS", StringComparison.OrdinalIgnoreCase))
+                return "CSC Global already has an order in progress for this certificate" +
+                       (string.IsNullOrEmpty(error.Value) ? "" : $" (order {error.Value})") +
+                       ". No new request was submitted. Once that order is approved and issued, the certificate " +
+                       "will appear after the next sync.";
+
+            return error.Description;
+        }
+
         public EnrollmentResult GetRenewResponse(RenewalResponse renewResponse)
         {
             if (renewResponse.RegistrationError != null)
@@ -26,7 +42,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 {
                     Status = 30, //failure
                     CARequestID = renewResponse?.Result?.Status?.Uuid,
-                    StatusMessage = renewResponse.RegistrationError.Description
+                    StatusMessage = DescribeError(renewResponse.RegistrationError)
                 };
 
             return new EnrollmentResult
@@ -46,7 +62,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 return new EnrollmentResult
                 {
                     Status = 30, //failure
-                    StatusMessage = registrationResponse.RegistrationError.Description
+                    StatusMessage = DescribeError(registrationResponse.RegistrationError)
                 };
 
             return new EnrollmentResult
@@ -72,7 +88,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 return new EnrollmentResult
                 {
                     Status = 30, //failure
-                    StatusMessage = reissueResponse.RegistrationError.Description
+                    StatusMessage = DescribeError(reissueResponse.RegistrationError)
                 };
 
             return new EnrollmentResult

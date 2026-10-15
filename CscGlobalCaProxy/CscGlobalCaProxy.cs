@@ -392,7 +392,10 @@ namespace Keyfactor.AnyGateway.CscGlobal
             Logger.Trace($"{operation} Response JSON: {JsonConvert.SerializeObject(response)}");
 
             var result = map(response);
-            flow.Step($"Map{operation}Result", $"status={result?.Status}");
+            if (result?.Status == FailedStatus)
+                flow.Fail($"Map{operation}Result", $"CSC Global rejected the request: {result.StatusMessage}");
+            else
+                flow.Step($"Map{operation}Result", $"status={result?.Status}");
             return result;
         }
 
