@@ -183,7 +183,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                             //One click renewal/reissue won't work for this implementation so there is an option to disable it by not syncing back template
                             var productId = "CscGlobal";
-                            if (EnableTemplateSync) productId = currentResponseItem?.CertificateType;
+                            //CSC names contain commas, which Active Directory template names can't, so they are translated
+                            if (EnableTemplateSync)
+                                productId = _requestManager.GetTemplateProductName(currentResponseItem?.CertificateType);
 
                             var fileContent =
                                 Encoding.ASCII.GetString(

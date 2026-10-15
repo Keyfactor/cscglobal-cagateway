@@ -142,36 +142,36 @@ Example with the default of 30 days: an order placed on 1-Jan-2026 expires 1-Jan
 - For template settings you can either hard code them in the template parameters as shown on the last template or make them show up as enrollment parameters.  You can also have a combination of both enrollment parameters and hard coded parameters in the template parameters.  You can also build a workflow in Keyfactor to change them during enrollment based on some parameters as shown in the attached workflow 1.
 ```
   "Templates": {
-    "CSC TrustedSecure Premium Certificate": {
-      "ProductID": "CSC TrustedSecure Premium Certificate",
+    "CSC TrustedSecure OV": {
+      "ProductID": "CSC TrustedSecure OV",
       "Parameters": {}
     },
-    "CSC TrustedSecure EV Certificate": {
-      "ProductID": "CSC TrustedSecure EV Certificate",
+    "CSC TrustedSecure OV Wildcard": {
+      "ProductID": "CSC TrustedSecure OV Wildcard",
       "Parameters": {}
     },
-    "CSC TrustedSecure UC Certificate": {
-      "ProductID": "CSC TrustedSecure UC Certificate",
+    "CSC TrustedSecure OV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure OV - Multiple Names",
       "Parameters": {}
     },
-    "CSC TrustedSecure Premium Wildcard Certificate": {
-      "ProductID": "CSC TrustedSecure Premium Wildcard Certificate",
+    "CSC TrustedSecure EV": {
+      "ProductID": "CSC TrustedSecure EV",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated SSL": {
-      "ProductID": "CSC TrustedSecure Domain Validated SSL",
+    "CSC TrustedSecure DV": {
+      "ProductID": "CSC TrustedSecure DV",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated Wildcard SSL": {
-      "ProductID": "CSC TrustedSecure Domain Validated Wildcard SSL",
+    "CSC TrustedSecure DV Wildcard": {
+      "ProductID": "CSC TrustedSecure DV Wildcard",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated UC Certificate": {
-      "ProductID": "CSC TrustedSecure Domain Validated UC Certificate",
-	"Parameters": {
+    "CSC TrustedSecure DV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure DV - Multiple Names",
+      "Parameters": {
 		"Term": "12",
 		"Applicant First Name": "Joe",
-		"Applicant Last Name": "Smiht",
+		"Applicant Last Name": "Smith",
 		"Applicant Email Address": "admin@jsmith.com",
 		"Applicant Phone (+nn.nnnnnnnn)": "+12.34567890",
 		"Domain Control Validation Method": "EMAIL",
@@ -181,6 +181,18 @@ Example with the default of 30 days: an order placed on 1-Jan-2026 expires 1-Jan
 		"CN DCV Email (admin@yourdomain.com)": "admin@jsmith.com",
 		"Addtl Sans Comma Separated DVC Emails": "admin@jsmith.com"
 	}
+    },
+    "CSC TrustedSecure EV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure EV - Multiple Names",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure OV Wildcard - Multiple Names": {
+      "ProductID": "CSC TrustedSecure OV Wildcard - Multiple Names",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure DV Wildcard - Multiple Names": {
+      "ProductID": "CSC TrustedSecure DV Wildcard - Multiple Names",
+      "Parameters": {}
     }
   }
 ```
@@ -215,20 +227,22 @@ Certificate templates and their enrollment fields for CSC Global are set up by K
 
 **PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION**
 
+Active Directory template names can't contain commas, so the CSC names that contain a comma are used with a hyphen in templates, for example CSC TrustedSecure OV - Multiple Names. The gateway translates between the two forms and also accepts the comma form.
+
 The gateway supports the following CSC Global certificate types. The product name in the template must match one of these names:
 
 Value | Product Name | Legacy Name (still supported)
 ------|--------------|------------------------------
 0 | CSC TrustedSecure OV | CSC TrustedSecure Premium Certificate
 1 | CSC TrustedSecure OV Wildcard | CSC TrustedSecure Premium Wildcard Certificate
-2 | CSC TrustedSecure OV, Multiple Names | CSC TrustedSecure UC Certificate
+2 | CSC TrustedSecure OV - Multiple Names | CSC TrustedSecure UC Certificate
 3 | CSC TrustedSecure EV | CSC TrustedSecure EV Certificate
 4 | CSC TrustedSecure DV | CSC TrustedSecure Domain Validated SSL
 5 | CSC TrustedSecure DV Wildcard | CSC TrustedSecure Domain Validated Wildcard SSL
-6 | CSC TrustedSecure DV, Multiple Names | CSC TrustedSecure Domain Validated UC Certificate
-7 | CSC TrustedSecure EV, Multiple Names | N/A
-8 | CSC TrustedSecure OV Wildcard, Multiple Names | N/A
-9 | CSC TrustedSecure DV Wildcard, Multiple Names | N/A
+6 | CSC TrustedSecure DV - Multiple Names | CSC TrustedSecure Domain Validated UC Certificate
+7 | CSC TrustedSecure EV - Multiple Names | N/A
+8 | CSC TrustedSecure OV Wildcard - Multiple Names | N/A
+9 | CSC TrustedSecure DV Wildcard - Multiple Names | N/A
 
 The enrollment fields used by the gateway are: Term, Applicant First Name, Applicant Last Name, Applicant Email Address, Applicant Phone (+nn.nnnnnnnn), Domain Control Validation Method, Organization Contact, Business Unit, Notification Email(s) Comma Separated and CN DCV Email (admin@yourdomain.com). The Multiple Names products also use Addtl Sans Comma Separated DVC Emails, and the EV products also require Organization Country.
 

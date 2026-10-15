@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
+using System.Text.RegularExpressions;
 using CAProxy.AnyGateway.Models;
 using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
@@ -151,9 +152,10 @@ namespace Keyfactor.AnyGateway.CscGlobal
         private const string UnknownCertificateType = "-1";
 
         //CSC certificateType values. The current CSC names come first, the legacy names are kept so templates that
-        //were already created in Keyfactor Command keep working.
-        private static readonly Dictionary<string, string> CertificateTypes =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        //were already created in Keyfactor Command keep working. CSC names contain commas, which Active Directory
+        //template names can't, so the lookup below ignores commas and hyphens (see NormalizeProductName).
+        private static readonly Dictionary<string, string> CertificateTypeNames =
+            new Dictionary<string, string>
             {
                 //current CSC names
                 {"CSC TrustedSecure OV", "0"},
@@ -196,10 +198,38 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return EvTypes.Contains(certificateType);
         }
 
+        private static readonly Dictionary<string, string> CertificateTypes =
+            CertificateTypeNames.ToDictionary(entry => NormalizeProductName(entry.Key), entry => entry.Value);
+
+        /// <summary>
+        /// Lower cases a product name and treats commas, hyphens and runs of spaces as a single space, so
+        /// "OV, Multiple Names", "OV - Multiple Names" and "OV-Multiple Names" all compare equal.
+        /// </summary>
+        private static string NormalizeProductName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+            var separated = name.Replace(',', ' ').Replace('-', ' ');
+            return string.Join(" ", separated.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries))
+                .ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Converts a CSC certificate type name to the product name used for templates. Active Directory template
+        /// names can't contain commas, so "CSC TrustedSecure OV, Multiple Names" becomes
+        /// "CSC TrustedSecure OV - Multiple Names".
+        /// </summary>
+        public string GetTemplateProductName(string cscCertificateType)
+        {
+            if (string.IsNullOrWhiteSpace(cscCertificateType)) return cscCertificateType;
+
+            return Regex.Replace(cscCertificateType.Trim(), @"\s*,\s*", " - ");
+        }
+
         private string GetCertificateType(string productId)
         {
-            var name = productId?.Trim();
-            if (!string.IsNullOrEmpty(name) && CertificateTypes.TryGetValue(name, out var certificateType))
+            var name = NormalizeProductName(productId);
+            if (name.Length > 0 && CertificateTypes.TryGetValue(name, out var certificateType))
                 return certificateType;
 
             return UnknownCertificateType;
