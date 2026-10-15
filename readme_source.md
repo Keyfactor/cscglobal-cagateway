@@ -211,220 +211,26 @@ Example with the default of 30 days: an order placed on 1-Jan-2026 expires 1-Jan
 
 ### Template Installation
 
+Certificate templates and their enrollment fields for CSC Global are set up by Keyfactor Support. Please open a ticket via the Keyfactor Support Portal (https://support.keyfactor.com) and ask for the CSC Global templates to be configured for your environment. Include the products you want to offer and the Keyfactor Command and gateway versions you are running.
+
 **PLEASE NOTE, AT THIS TIME THE RAPID_SSL TEMPLATE IS NOT SUPPORTED BY THE CSC API AND WILL NOT WORK WITH THIS INTEGRATION**
 
-1) **Create ADFS Certificate Templates for the Following Products**
-- CSC TrustedSecure Premium Certificate
-- CSC TrustedSecure EV Certificate
-- CSC TrustedSecure UC Certificate
-- CSC TrustedSecure Premium Wildcard Certificate
-- CSC TrustedSecure Domain Validated SSL
-- CSC TrustedSecure Domain Validated Wildcard SSL
-- CSC TrustedSecure Domain Validated UC Certificate
+The gateway supports the following CSC Global certificate types. The product name in the template must match one of these names:
 
-2) **Import Into Keyfactor using the template import functionality**
+Value | Product Name | Legacy Name (still supported)
+------|--------------|------------------------------
+0 | CSC TrustedSecure OV | CSC TrustedSecure Premium Certificate
+1 | CSC TrustedSecure OV Wildcard | CSC TrustedSecure Premium Wildcard Certificate
+2 | CSC TrustedSecure OV, Multiple Names | CSC TrustedSecure UC Certificate
+3 | CSC TrustedSecure EV | CSC TrustedSecure EV Certificate
+4 | CSC TrustedSecure DV | CSC TrustedSecure Domain Validated SSL
+5 | CSC TrustedSecure DV Wildcard | CSC TrustedSecure Domain Validated Wildcard SSL
+6 | CSC TrustedSecure DV, Multiple Names | CSC TrustedSecure Domain Validated UC Certificate
+7 | CSC TrustedSecure EV, Multiple Names | N/A
+8 | CSC TrustedSecure OV Wildcard, Multiple Names | N/A
+9 | CSC TrustedSecure DV Wildcard, Multiple Names | N/A
 
-3) **Edit each template and modify the Details and Enrollment Fields as Follows**
-*CSC TrustedSecure Premium Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Premium Certificate
-Template Display Name	| CSC TrustedSecure Premium Certificate
-Friendly Name	| CSC TrustedSecure Premium Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Premium Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure EV Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure EV Certificate
-Template Display Name	| CSC TrustedSecure EV Certificate
-Friendly Name	| CSC TrustedSecure EV Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure EV Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Organization Country | String | N/A
-
-**CSC TrustedSecure UC Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure UC Certificate
-Template Display Name	| CSC TrustedSecure UC Certificate
-Friendly Name	| CSC TrustedSecure UC Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure UC Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Addtl Sans Comma Separated DVC Emails | String | N/A
-	
-
-**CSC TrustedSecure Premium Wildcard Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Premium Wildcard Certificate
-Template Display Name	| CSC TrustedSecure Premium Wildcard Certificate
-Friendly Name	| CSC TrustedSecure Premium Wildcard Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Premium Wildcard Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated SSL - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated SSL
-Template Display Name	| CSC TrustedSecure Domain Validated SSL
-Friendly Name	| CSC TrustedSecure Domain Validated SSL
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated SSL - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated Wildcard SSL - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Template Display Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Friendly Name	| CSC TrustedSecure Domain Validated Wildcard SSL
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated Wildcard SSL - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-
-**CSC TrustedSecure Domain Validated UC Certificate - Details Tab**
-
-CONFIG ELEMENT				| DESCRIPTION
-----------------------------|------------------
-Template Short Name	| CSC TrustedSecure Domain Validated UC Certificate
-Template Display Name	| CSC TrustedSecure Domain Validated UC Certificate
-Friendly Name	| CSC TrustedSecure Domain Validated UC Certificate
-Keys Size  | 2048
-Enforce RFC 2818 Compliance | True
-CSR Enrollment | True
-Pfx Enrollment | True
-
-
-**CSC TrustedSecure Domain Validated UC Certificate - Enrollment Fields**
-
-NAME | DATA TYPE	| VALUES
------|--------------|-----------------
-Term | Multiple Choice | 12,24
-Applicant First Name | String | N/A
-Applicant Last Name | String | N/A
-Applicant Email Address | String | N/A
-Applicant Phone (+nn.nnnnnnnn) | String | N/A
-Domain Control Validation Method | Multiple Choice | EMAIL
-Organization Contact | Multiple Choice | Get From CSC Differs For Clients
-Business Unit | Multiple Choice | Get From CSC Differs For Clients
-Notification Email(s) Comma Separated | String | N/A
-CN DCV Email (admin@yourdomain.com) | String | N/A
-Addtl Sans Comma Separated DVC Emails | String | N/A
-
+The enrollment fields used by the gateway are: Term, Applicant First Name, Applicant Last Name, Applicant Email Address, Applicant Phone (+nn.nnnnnnnn), Domain Control Validation Method, Organization Contact, Business Unit, Notification Email(s) Comma Separated and CN DCV Email (admin@yourdomain.com). The Multiple Names products also use Addtl Sans Comma Separated DVC Emails, and the EV products also require Organization Country.
 
 ### Certificate Authority Installation
 1) Gateway Server - Start the Keyfactor Gateway Service

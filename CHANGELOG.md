@@ -3,6 +3,8 @@ v1.2.1
 - Added FlowLogger step diagrams to the Trace log for Enroll, Synchronize, Revoke, GetSingleRecord and Initialize
 - Removed the 'cannot renew an expired cert' failure; prior certificate serial numbers now match with or without the leading 00 sign byte
 - Hardening: validate required enrollment parameters and prior certificate before calling CSC, clearer error messages, null response checks, culture-safe date parsing, per-certificate error isolation during sync, original exceptions preserved
+- Support CSC's current certificate type names (OV, OV Wildcard, OV Multiple Names, EV, DV, DV Wildcard, DV Multiple Names) and the new EV Multiple Names, OV Wildcard Multiple Names and DV Wildcard Multiple Names types; legacy product names keep working. SANs are now sent for all Multiple Names types and EV details for both EV types
+- Removed the bundled template files, product CSV and template install script; templates are now set up by Keyfactor Support
 
 v1.2.0
 - Incremental Sync Support with effectiveDate within last 5 days
