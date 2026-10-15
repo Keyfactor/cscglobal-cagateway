@@ -575,6 +575,20 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
                     var certificateResponse = flow.Step("FetchCertificateFromCsc",
                         () => RunSync(() => CscGlobalClient.SubmitGetCertificateAsync(keyfactorCaId)));
+                    if (certificateResponse == null)
+                    {
+                        //Not available at CSC yet, for example an order still waiting for approval. The issued
+                        //certificate comes down with a later sync, so report it as pending instead of an error.
+                        flow.Skip("ExtractEndEntityCertificate", "not found at CSC Global, treating as pending until a later sync");
+                        Logger.Warn($"Certificate {keyfactorCaId} was not found at CSC Global; reporting it as pending until it is approved and synced.");
+                        return new CAConnectorCertificate
+                        {
+                            CARequestID = keyfactorCaId,
+                            Status = Convert.ToInt32(PKIConstants.Microsoft.RequestDisposition.PENDING),
+                            SubmissionDate = DateTime.Now
+                        };
+                    }
+
                     Logger.Trace($"Single Cert JSON: {JsonConvert.SerializeObject(certificateResponse)}");
 
                     var fileContent =

@@ -7,6 +7,7 @@ v1.2.1
 - Removed the bundled template files, product CSV and template install script; templates are now set up by Keyfactor Support
 - Product names with commas (for example 'OV, Multiple Names') are translated to hyphens ('OV - Multiple Names') for Active Directory template names, both when syncing and when matching templates on enrollment; sample config and README updated
 - Fix reissue/renewal failing to read CSC's response when the price total is null (free reissue under an active order)
+- A certificate that CSC Global does not have yet (for example an order waiting for approval) is reported as pending instead of an error, and comes down with a later sync
 
 v1.2.0
 - Incremental Sync Support with effectiveDate within last 5 days
