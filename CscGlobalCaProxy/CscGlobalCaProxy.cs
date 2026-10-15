@@ -335,93 +335,62 @@ namespace Keyfactor.AnyGateway.CscGlobal
             enrollmentType = ResolveEnrollmentType(flow, certificateDataReader, productInfo, requestedType);
             flow.Step("EnrollmentDecision", $"requested={requestedType}, resolved={enrollmentType}");
 
+            if (enrollmentType != RequestUtilities.EnrollmentType.New &&
+                enrollmentType != RequestUtilities.EnrollmentType.Renew &&
+                enrollmentType != RequestUtilities.EnrollmentType.Reissue)
+            {
+                flow.Fail("SelectPath", $"unsupported enrollment type {enrollmentType}");
+                return Failure($"The enrollment type '{enrollmentType}' is not supported by the CSC Global gateway.");
+            }
+
+            //Renew and Reissue act on the prior order. A New that carries PriorCertSN (for example an expired order)
+            //is simply ordered as a new certificate.
+            var usesPriorOrder = enrollmentType != RequestUtilities.EnrollmentType.New;
+            if (!usesPriorOrder && productInfo.ProductParameters.ContainsKey("PriorCertSN"))
+                flow.Step("PriorCertNotReused", "ordering as a new certificate");
+
+            var missing = ValidateRequiredParameters(flow, productInfo, usesPriorOrder);
+            if (missing != null) return Failure(missing);
+
+            var uUId = usesPriorOrder ? GetPriorCertificateUuid(flow, certificateDataReader, productInfo) : null;
+
             switch (enrollmentType)
             {
-                case RequestUtilities.EnrollmentType.New:
-                    return EnrollNew(flow, csr, san, productInfo);
                 case RequestUtilities.EnrollmentType.Renew:
-                    return EnrollRenew(flow, certificateDataReader, csr, san, productInfo);
+                    return SubmitToCsc<RenewalRequest, RenewalResponse>(flow, "Renewal",
+                        () => _requestManager.GetRenewalRequest(productInfo, uUId, csr, san),
+                        request => CscGlobalClient.SubmitRenewalAsync(request),
+                        _requestManager.GetRenewResponse);
                 case RequestUtilities.EnrollmentType.Reissue:
-                    return EnrollReissue(flow, certificateDataReader, csr, san, productInfo);
+                    return SubmitToCsc<ReissueRequest, ReissueResponse>(flow, "Reissue",
+                        () => _requestManager.GetReissueRequest(productInfo, uUId, csr, san),
+                        request => CscGlobalClient.SubmitReissueAsync(request),
+                        _requestManager.GetReIssueResult);
                 default:
-                    flow.Fail("SelectPath", $"unsupported enrollment type {enrollmentType}");
-                    return Failure($"The enrollment type '{enrollmentType}' is not supported by the CSC Global gateway.");
+                    return SubmitToCsc<RegistrationRequest, RegistrationResponse>(flow, "Registration",
+                        () => _requestManager.GetRegistrationRequest(productInfo, csr, san),
+                        request => CscGlobalClient.SubmitRegistrationAsync(request),
+                        _requestManager.GetEnrollmentResult);
             }
         }
 
-        private EnrollmentResult EnrollNew(FlowLogger flow, string csr, Dictionary<string, string[]> san,
-            EnrollmentProductInfo productInfo)
+        /// <summary>
+        /// The one place a request is built, sent to CSC and mapped back to an enrollment result.
+        /// </summary>
+        private EnrollmentResult SubmitToCsc<TRequest, TResponse>(FlowLogger flow, string operation,
+            Func<TRequest> build, Func<TRequest, Task<TResponse>> submit, Func<TResponse, EnrollmentResult> map)
+            where TResponse : class
         {
-            flow.Step("SelectPath", "New");
+            var request = flow.Step($"Build{operation}Request", build);
+            Logger.Trace($"{operation} Request JSON: {JsonConvert.SerializeObject(request)}");
 
-            //A New request can still carry PriorCertSN (for example renewing an expired certificate). When the prior
-            //order can't be reissued or renewed it is simply ordered as a new certificate.
-            if (productInfo.ProductParameters.ContainsKey("PriorCertSN"))
-                flow.Step("PriorCertNotReused", "ordering as a new certificate");
+            var response = flow.Step($"Submit{operation}ToCsc", () => RunSync(() => submit(request)));
+            if (response == null)
+                throw new InvalidOperationException($"CSC Global returned an empty response to the {operation.ToLowerInvariant()} request.");
+            Logger.Trace($"{operation} Response JSON: {JsonConvert.SerializeObject(response)}");
 
-            var missing = ValidateRequiredParameters(flow, productInfo);
-            if (missing != null) return Failure(missing);
-
-            var enrollmentRequest = flow.Step("BuildRegistrationRequest",
-                () => _requestManager.GetRegistrationRequest(productInfo, csr, san));
-            Logger.Trace($"Enrollment Request JSON: {JsonConvert.SerializeObject(enrollmentRequest)}");
-
-            var enrollmentResponse = flow.Step("SubmitRegistrationToCsc",
-                () => RunSync(() => CscGlobalClient.SubmitRegistrationAsync(enrollmentRequest)));
-            if (enrollmentResponse == null)
-                throw new InvalidOperationException("CSC Global returned an empty response to the registration request.");
-            Logger.Trace($"Enrollment Response JSON: {JsonConvert.SerializeObject(enrollmentResponse)}");
-
-            var result = _requestManager.GetEnrollmentResult(enrollmentResponse);
-            flow.Step("MapEnrollmentResult", $"status={result?.Status}");
-            return result;
-        }
-
-        private EnrollmentResult EnrollRenew(FlowLogger flow, ICertificateDataReader certificateDataReader,
-            string csr, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo)
-        {
-            flow.Step("SelectPath", "Renew");
-
-            var missing = ValidateRequiredParameters(flow, productInfo, true);
-            if (missing != null) return Failure(missing);
-
-            var uUId = GetPriorCertificateUuid(flow, certificateDataReader, productInfo);
-            var renewRequest = flow.Step("BuildRenewalRequest",
-                () => _requestManager.GetRenewalRequest(productInfo, uUId, csr, san));
-            Logger.Trace($"Renewal Request JSON: {JsonConvert.SerializeObject(renewRequest)}");
-
-            var renewResponse = flow.Step("SubmitRenewalToCsc",
-                () => RunSync(() => CscGlobalClient.SubmitRenewalAsync(renewRequest)));
-            if (renewResponse == null)
-                throw new InvalidOperationException("CSC Global returned an empty response to the renewal request.");
-            Logger.Trace($"Renewal Response JSON: {JsonConvert.SerializeObject(renewResponse)}");
-
-            var result = _requestManager.GetRenewResponse(renewResponse);
-            flow.Step("MapRenewalResult", $"status={result?.Status}");
-            return result;
-        }
-
-        private EnrollmentResult EnrollReissue(FlowLogger flow, ICertificateDataReader certificateDataReader,
-            string csr, Dictionary<string, string[]> san, EnrollmentProductInfo productInfo)
-        {
-            flow.Step("SelectPath", "Reissue");
-
-            var missing = ValidateRequiredParameters(flow, productInfo, true);
-            if (missing != null) return Failure(missing);
-
-            var uUId = GetPriorCertificateUuid(flow, certificateDataReader, productInfo);
-            var reissueRequest = flow.Step("BuildReissueRequest",
-                () => _requestManager.GetReissueRequest(productInfo, uUId, csr, san));
-            Logger.Trace($"Reissue JSON: {JsonConvert.SerializeObject(reissueRequest)}");
-
-            var reissueResponse = flow.Step("SubmitReissueToCsc",
-                () => RunSync(() => CscGlobalClient.SubmitReissueAsync(reissueRequest)));
-            if (reissueResponse == null)
-                throw new InvalidOperationException("CSC Global returned an empty response to the reissue request.");
-            Logger.Trace($"Reissue Response JSON: {JsonConvert.SerializeObject(reissueResponse)}");
-
-            var result = _requestManager.GetReIssueResult(reissueResponse);
-            flow.Step("MapReissueResult", $"status={result?.Status}");
+            var result = map(response);
+            flow.Step($"Map{operation}Result", $"status={result?.Status}");
             return result;
         }
 
