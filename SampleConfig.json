@@ -26,32 +26,44 @@
     "TemplateSync": "On"
   },
   "Templates": {
-    "CSC TrustedSecure Premium Certificate": {
-      "ProductID": "CSC TrustedSecure Premium Certificate",
+    "CSC TrustedSecure OV": {
+      "ProductID": "CSC TrustedSecure OV",
       "Parameters": {}
     },
-    "CSC TrustedSecure EV Certificate": {
-      "ProductID": "CSC TrustedSecure EV Certificate",
+    "CSC TrustedSecure OV Wildcard": {
+      "ProductID": "CSC TrustedSecure OV Wildcard",
       "Parameters": {}
     },
-    "CSC TrustedSecure UC Certificate": {
-      "ProductID": "CSC TrustedSecure UC Certificate",
+    "CSC TrustedSecure OV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure OV - Multiple Names",
       "Parameters": {}
     },
-    "CSC TrustedSecure Premium Wildcard Certificate": {
-      "ProductID": "CSC TrustedSecure Premium Wildcard Certificate",
+    "CSC TrustedSecure EV": {
+      "ProductID": "CSC TrustedSecure EV",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated SSL": {
-      "ProductID": "CSC TrustedSecure Domain Validated SSL",
+    "CSC TrustedSecure DV": {
+      "ProductID": "CSC TrustedSecure DV",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated Wildcard SSL": {
-      "ProductID": "CSC TrustedSecure Domain Validated Wildcard SSL",
+    "CSC TrustedSecure DV Wildcard": {
+      "ProductID": "CSC TrustedSecure DV Wildcard",
       "Parameters": {}
     },
-    "CSC TrustedSecure Domain Validated UC Certificate": {
-      "ProductID": "CSC TrustedSecure Domain Validated UC Certificate",
+    "CSC TrustedSecure DV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure DV - Multiple Names",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure EV - Multiple Names": {
+      "ProductID": "CSC TrustedSecure EV - Multiple Names",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure OV Wildcard - Multiple Names": {
+      "ProductID": "CSC TrustedSecure OV Wildcard - Multiple Names",
+      "Parameters": {}
+    },
+    "CSC TrustedSecure DV Wildcard - Multiple Names": {
+      "ProductID": "CSC TrustedSecure DV Wildcard - Multiple Names",
       "Parameters": {}
     }
   },

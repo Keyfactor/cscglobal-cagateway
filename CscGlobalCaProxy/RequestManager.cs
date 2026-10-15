@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 using System.Text;
+using System.Text.RegularExpressions;
 using CAProxy.AnyGateway.Models;
 using CSS.PKI;
 using Keyfactor.AnyGateway.CscGlobal.Client.Models;
@@ -143,38 +144,95 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = true, //User should not have to fill this out
                 CustomFields = GetCustomFields(productInfo),
-                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
-                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
+                SubjectAlternativeNames = IsMultipleNamesType(certificateType) ? GetSubjectAlternativeNames(productInfo, sans) : null,
+                EvCertificateDetails = IsEvType(certificateType) ? GetEvCertificateDetails(productInfo) : null
             };
+        }
+
+        private const string UnknownCertificateType = "-1";
+
+        //CSC certificateType values. The current CSC names come first, the legacy names are kept so templates that
+        //were already created in Keyfactor Command keep working. CSC names contain commas, which Active Directory
+        //template names can't, so the lookup below ignores commas and hyphens (see NormalizeProductName).
+        private static readonly Dictionary<string, string> CertificateTypeNames =
+            new Dictionary<string, string>
+            {
+                //current CSC names
+                {"CSC TrustedSecure OV", "0"},
+                {"CSC TrustedSecure OV Wildcard", "1"},
+                {"CSC TrustedSecure OV, Multiple Names", "2"},
+                {"CSC TrustedSecure EV", "3"},
+                {"CSC TrustedSecure DV", "4"},
+                {"CSC TrustedSecure DV Wildcard", "5"},
+                {"CSC TrustedSecure DV, Multiple Names", "6"},
+                {"CSC TrustedSecure EV, Multiple Names", "7"},
+                {"CSC TrustedSecure OV Wildcard, Multiple Names", "8"},
+                {"CSC TrustedSecure DV Wildcard, Multiple Names", "9"},
+
+                //legacy names
+                {"CSC TrustedSecure Premium Certificate", "0"},
+                {"CSC TrustedSecure Premium Wildcard Certificate", "1"},
+                {"CSC TrustedSecure UC Certificate", "2"},
+                {"CSC TrustedSecure EV Certificate", "3"},
+                {"CSC TrustedSecure Domain Validated SSL", "4"},
+                {"CSC TrustedSecure Domain Validated Wildcard SSL", "5"},
+                {"CSC TrustedSecure Domain Validated UC Certificate", "6"},
+                {"CSC Trusted Secure Domain Validated SSL", "4"},
+                {"CSC Trusted Secure Domain Validated Wildcard SSL", "5"},
+                {"CSC Trusted Secure Domain Validated UC Certificate", "6"}
+            };
+
+        //Certificate types that carry additional subject alternative names
+        private static readonly HashSet<string> MultipleNamesTypes = new HashSet<string> {"2", "6", "7", "8", "9"};
+
+        //Certificate types that need extended validation details
+        private static readonly HashSet<string> EvTypes = new HashSet<string> {"3", "7"};
+
+        private static bool IsMultipleNamesType(string certificateType)
+        {
+            return MultipleNamesTypes.Contains(certificateType);
+        }
+
+        private static bool IsEvType(string certificateType)
+        {
+            return EvTypes.Contains(certificateType);
+        }
+
+        private static readonly Dictionary<string, string> CertificateTypes =
+            CertificateTypeNames.ToDictionary(entry => NormalizeProductName(entry.Key), entry => entry.Value);
+
+        /// <summary>
+        /// Lower cases a product name and treats commas, hyphens and runs of spaces as a single space, so
+        /// "OV, Multiple Names", "OV - Multiple Names" and "OV-Multiple Names" all compare equal.
+        /// </summary>
+        private static string NormalizeProductName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return string.Empty;
+
+            var separated = name.Replace(',', ' ').Replace('-', ' ');
+            return string.Join(" ", separated.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries))
+                .ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Converts a CSC certificate type name to the product name used for templates. Active Directory template
+        /// names can't contain commas, so "CSC TrustedSecure OV, Multiple Names" becomes
+        /// "CSC TrustedSecure OV - Multiple Names".
+        /// </summary>
+        public string GetTemplateProductName(string cscCertificateType)
+        {
+            if (string.IsNullOrWhiteSpace(cscCertificateType)) return cscCertificateType;
+
+            return Regex.Replace(cscCertificateType.Trim(), @"\s*,\s*", " - ");
         }
 
         private string GetCertificateType(string productId)
         {
-            switch (productId)
-            {
-                case "CSC TrustedSecure Premium Certificate":
-                    return "0";
-                case "CSC TrustedSecure EV Certificate":
-                    return "3";
-                case "CSC TrustedSecure UC Certificate":
-                    return "2";
-                case "CSC TrustedSecure Premium Wildcard Certificate":
-                    return "1";
-                case "CSC Trusted Secure Domain Validated SSL":
-                    return "4";
-                case "CSC Trusted Secure Domain Validated Wildcard SSL":
-                    return "5";
-                case "CSC Trusted Secure Domain Validated UC Certificate":
-                    return "6";
-                case "CSC TrustedSecure Domain Validated SSL":
-                    return "4";
-                case "CSC TrustedSecure Domain Validated Wildcard SSL":
-                    return "5";
-                case "CSC TrustedSecure Domain Validated UC Certificate":
-                    return "6";
-            }
+            var name = NormalizeProductName(productId);
+            if (name.Length > 0 && CertificateTypes.TryGetValue(name, out var certificateType))
+                return certificateType;
 
-            return "-1";
+            return UnknownCertificateType;
         }
 
         public Notifications GetNotifications(EnrollmentProductInfo productInfo)
@@ -216,9 +274,9 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = true,
-                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
+                SubjectAlternativeNames = IsMultipleNamesType(certificateType) ? GetSubjectAlternativeNames(productInfo, sans) : null,
                 CustomFields = GetCustomFields(productInfo),
-                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
+                EvCertificateDetails = IsEvType(certificateType) ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
@@ -228,12 +286,18 @@ namespace Keyfactor.AnyGateway.CscGlobal
             var subjectNameList = new List<SubjectAlternativeName>();
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
 
-            foreach (var v in sans["dns"])
+            if (sans == null || !sans.TryGetValue("dns", out var dnsNames) || dnsNames == null)
+                return subjectNameList;
+
+            //Only used for EMAIL validation, a CNAME validation does not need any addresses
+            productInfo.ProductParameters.TryGetValue("Addtl Sans Comma Separated DVC Emails", out var sanEmails);
+            var emailAddresses = (sanEmails ?? string.Empty).Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var v in dnsNames)
             {
                 var domainName = v;
                 var san = new SubjectAlternativeName();
                 san.DomainName = domainName;
-                var emailAddresses = productInfo.ProductParameters["Addtl Sans Comma Separated DVC Emails"].Split(',');
                 if (methodType.ToUpper() == "EMAIL")
                     san.DomainControlValidation = GetDomainControlValidation(methodType, emailAddresses, domainName);
                 else //it is a CNAME validation so no email is needed
@@ -274,16 +338,21 @@ namespace Keyfactor.AnyGateway.CscGlobal
                 OrganizationContact = productInfo.ProductParameters["Organization Contact"],
                 BusinessUnit = productInfo.ProductParameters["Business Unit"],
                 ShowPrice = true,
-                SubjectAlternativeNames = certificateType == "2" ? GetSubjectAlternativeNames(productInfo, sans) : null,
+                SubjectAlternativeNames = IsMultipleNamesType(certificateType) ? GetSubjectAlternativeNames(productInfo, sans) : null,
                 CustomFields = GetCustomFields(productInfo),
-                EvCertificateDetails = certificateType == "3" ? GetEvCertificateDetails(productInfo) : null
+                EvCertificateDetails = IsEvType(certificateType) ? GetEvCertificateDetails(productInfo) : null
             };
         }
 
         private EvCertificateDetails GetEvCertificateDetails(EnrollmentProductInfo productInfo)
         {
+            if (!productInfo.ProductParameters.TryGetValue("Organization Country", out var country) ||
+                string.IsNullOrWhiteSpace(country))
+                throw new InvalidOperationException(
+                    "The 'Organization Country' enrollment parameter is required for extended validation (EV) certificates.");
+
             var evDetails = new EvCertificateDetails();
-            evDetails.Country = productInfo.ProductParameters["Organization Country"];
+            evDetails.Country = country;
             return evDetails;
         }
 

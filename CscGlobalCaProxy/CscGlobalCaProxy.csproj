@@ -87,6 +87,7 @@
     <Compile Include="Interfaces\IRegistrationError.cs" />
     <Compile Include="Client\Models\RegistrationError.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="FlowLogger.cs" />
     <Compile Include="CscGlobalCaProxy.cs" />
     <Compile Include="Client\Models\CertificateListResponse.cs" />
     <Compile Include="Client\Models\CertificateResponse.cs" />
