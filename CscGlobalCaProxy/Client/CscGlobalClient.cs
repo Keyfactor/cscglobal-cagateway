@@ -117,6 +117,13 @@ namespace Keyfactor.AnyGateway.CscGlobal.Client
         {
             using (var resp = await RestClient.GetAsync($"/dbs/api/v2/tls/certificate/{certificateId}"))
             {
+                //A new, renewed or reissued order isn't available as a certificate until it has been approved and issued
+                if (resp.StatusCode == HttpStatusCode.NotFound)
+                {
+                    Logger.Trace($"Certificate {certificateId} was not found at CSC Global (not issued yet?)");
+                    return null;
+                }
+
                 resp.EnsureSuccessStatusCode();
                 var getCertificateResponse =
                     JsonConvert.DeserializeObject<CertificateResponse>(await resp.Content.ReadAsStringAsync());
