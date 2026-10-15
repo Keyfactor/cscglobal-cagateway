@@ -6,6 +6,7 @@ v1.2.1
 - Support CSC's current certificate type names (OV, OV Wildcard, OV Multiple Names, EV, DV, DV Wildcard, DV Multiple Names) and the new EV Multiple Names, OV Wildcard Multiple Names and DV Wildcard Multiple Names types; legacy product names keep working. SANs are now sent for all Multiple Names types and EV details for both EV types
 - Removed the bundled template files, product CSV and template install script; templates are now set up by Keyfactor Support
 - Product names with commas (for example 'OV, Multiple Names') are translated to hyphens ('OV - Multiple Names') for Active Directory template names, both when syncing and when matching templates on enrollment; sample config and README updated
+- Fix reissue/renewal failing to read CSC's response when the price total is null (free reissue under an active order)
 
 v1.2.0
 - Incremental Sync Support with effectiveDate within last 5 days
