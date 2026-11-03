@@ -38,9 +38,12 @@ namespace Keyfactor.AnyGateway.CscGlobal
             "Organization Contact",
             "Business Unit",
             "Domain Control Validation Method",
-            "CN DCV Email (admin@yourdomain.com)",
             "Notification Email(s) Comma Separated"
         };
+
+        //Only the EMAIL validation method sends a validation email; CNAME validation does not use it
+        private const string CnDcvEmailParameter = "CN DCV Email (admin@yourdomain.com)";
+        private const string EmailValidationMethod = "EMAIL";
 
         private static readonly string[] CscDateFormats = {"dd-MMM-yyyy", "d-MMM-yyyy"};
 
@@ -408,6 +411,11 @@ namespace Keyfactor.AnyGateway.CscGlobal
             var missing = RequiredEnrollmentParameters
                 .Where(name => !parameters.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
                 .ToList();
+
+            if (parameters.TryGetValue("Domain Control Validation Method", out var method) &&
+                string.Equals(method?.Trim(), EmailValidationMethod, StringComparison.OrdinalIgnoreCase) &&
+                (!parameters.TryGetValue(CnDcvEmailParameter, out var dcvEmail) || string.IsNullOrWhiteSpace(dcvEmail)))
+                missing.Add(CnDcvEmailParameter);
 
             if (missing.Count == 0)
             {
