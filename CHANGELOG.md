@@ -1,3 +1,6 @@
+v1.2.2
+- Fix enrollment failing with "missing required parameter(s): CN DCV Email" when the Domain Control Validation Method is CNAME; CN DCV Email is now only required for the EMAIL method (regression in 1.2.1)
+
 v1.2.1
 - New/Renew/Reissue requests with a prior certificate are resolved from the order date: reissued under the active order outside the renewal window (RenewalWindowDays, default 30), renewed inside it, ordered new once expired, supporting shorter-lived (~200 day) certificates
 - Added FlowLogger step diagrams to the Trace log for Enroll, Synchronize, Revoke, GetSingleRecord and Initialize
