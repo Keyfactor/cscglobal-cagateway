@@ -1,7 +1,0 @@
-﻿UserName,Rights
-Authenticated Users,GenericAll
-kftrain\Administrator,GenericAll
-keyfactor\Domain Admins,GenericAll
-keyfactor\Domain Users,GenericAll
-keyfactor\Domain Computers,GenericAll
-keyfactor\Enterprise Admins,GenericAll

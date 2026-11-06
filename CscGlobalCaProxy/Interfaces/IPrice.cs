@@ -3,6 +3,6 @@
     public interface IPrice
     {
         string Currency { get; set; }
-        decimal Total { get; set; }
+        decimal? Total { get; set; }
     }
 }
