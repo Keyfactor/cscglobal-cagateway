@@ -349,3 +349,6 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 /CommandSetup.zip
+
+# Claude Code local settings (per-developer)
+.claude/settings.local.json
