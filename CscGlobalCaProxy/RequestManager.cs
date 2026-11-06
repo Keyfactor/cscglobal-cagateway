@@ -116,6 +116,14 @@ namespace Keyfactor.AnyGateway.CscGlobal
             return null;
         }
 
+        //Optional for CNAME validation, so the parameter may be absent or empty
+        private static string GetCommonNameValidationEmail(EnrollmentProductInfo productInfo)
+        {
+            return productInfo.ProductParameters.TryGetValue("CN DCV Email (admin@yourdomain.com)", out var email)
+                ? email
+                : string.Empty;
+        }
+
         public DomainControlValidation GetDomainControlValidation(string methodType, string emailAddress)
         {
             return new DomainControlValidation
@@ -140,7 +148,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
-            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var commonNameValidationEmail = GetCommonNameValidationEmail(productInfo);
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
 
@@ -270,7 +278,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
-            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var commonNameValidationEmail = GetCommonNameValidationEmail(productInfo);
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
 
@@ -334,7 +342,7 @@ namespace Keyfactor.AnyGateway.CscGlobal
 
             var bytes = Encoding.UTF8.GetBytes(cert);
             var encodedString = Convert.ToBase64String(bytes);
-            var commonNameValidationEmail = productInfo.ProductParameters["CN DCV Email (admin@yourdomain.com)"];
+            var commonNameValidationEmail = GetCommonNameValidationEmail(productInfo);
             var methodType = productInfo.ProductParameters["Domain Control Validation Method"];
             var certificateType = GetCertificateType(productInfo.ProductID);
 
